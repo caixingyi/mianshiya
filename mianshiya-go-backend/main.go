@@ -1,8 +1,7 @@
 package main
 
 import (
-	"mianshiya-go-backend/internal/errorcode"
-	"mianshiya-go-backend/internal/response"
+	"mianshiya-go-backend/internal/router"
 
 	"github.com/gin-gonic/gin"
 )
@@ -10,13 +9,7 @@ import (
 func main() {
 	r := gin.Default()
 
-	api := r.Group("/api")
+	router.RegisterRouter(r)
 
-	api.GET("/health", func(c *gin.Context) {
-		c.JSON(200, response.Success("ok"))
-	})
-	api.GET("/error-demo", func(c *gin.Context) {
-		c.JSON(200, response.Error(errorcode.ParamsError))
-	})
 	r.Run("0.0.0.0:8101")
 }
