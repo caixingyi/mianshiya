@@ -60,3 +60,35 @@ func (s *Service) Register(req *RegisterRequest) (int64, error) {
 	// 5. 写入数据库
 	return s.repo.Create(user)
 }
+
+func (s *Service) Login(req *LoginRequest) (*LoginUserResponse, error) {
+	// 1. 校验参数
+	if req.UserAccount == "" || req.UserPassword == "" {
+		return nil, errors.New("账号或密码不能为空")
+	}
+	if len(req.UserAccount) < 4 {
+		return nil, errors.New("账号长度不能少于4位")
+	}
+	if len(req.UserPassword) < 8 {
+		return nil, errors.New("密码长度不能少于8位")
+	}
+
+	// 2. 查找用户
+	user, err := s.repo.FindByAccount(req.UserAccount)
+
+	if err != nil {
+		return nil, errors.New("用户不存在")
+	}
+
+	// 3. 验证密码
+	if user.UserPassword != encryptPassword(req.UserPassword) {
+		return nil, errors.New("密码错误")
+	}
+
+	// 4. 返回登录成功响应
+	return &LoginUserResponse{
+		ID:          user.ID,
+		UserAccount: user.UserAccount,
+		UserRole:    user.UserRole,
+	}, nil
+}

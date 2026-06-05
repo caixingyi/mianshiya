@@ -18,4 +18,5 @@ func RegisterRouter(r *gin.Engine, database *gorm.DB) {
 	service := user.NewService(repo)
 	userHandler := user.NewHandler(service)
 	api.POST("/user/register", userHandler.RegisterHandler)
+	api.POST("/user/login", userHandler.LoginHandler)
 }
