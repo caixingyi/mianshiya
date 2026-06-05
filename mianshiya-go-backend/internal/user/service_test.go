@@ -4,27 +4,26 @@ import (
 	"testing"
 )
 
-
 func TestRegister(t *testing.T) {
 	test := []struct {
-		name	string
-		req		RegisterRequest
-		wantErr	bool
+		name    string
+		req     RegisterRequest
+		wantErr bool
 	}{
 		{
-		name: "success",
-		req: RegisterRequest{
-			UserAccount: "test123",
-			UserPassword: "password123",
-			CheckPassword: "password123",
-		},
-		wantErr: false,
+			name: "success",
+			req: RegisterRequest{
+				UserAccount:   "test123",
+				UserPassword:  "password123",
+				CheckPassword: "password123",
+			},
+			wantErr: false,
 		},
 		{
 			name: "empty account",
 			req: RegisterRequest{
-				UserAccount: "",
-				UserPassword: "password123",
+				UserAccount:   "",
+				UserPassword:  "password123",
 				CheckPassword: "password123",
 			},
 			wantErr: true,
