@@ -7,13 +7,21 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func RegisterHandler(c *gin.Context) {
+type Handler struct {
+	service *Service
+}
+
+func NewHandler(service *Service) *Handler {
+	return &Handler{service: service}
+}
+
+func (h *Handler) RegisterHandler(c *gin.Context) {
 	var req RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(200, response.Error(errorcode.ParamsError))
 		return
 	}
-	userId, err := Register(&req)
+	userId, err := h.service.Register(&req)
 	if err != nil {
 		c.JSON(200, response.ErrorWithMessage(errorcode.ParamsError, err.Error()))
 		return

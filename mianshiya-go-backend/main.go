@@ -4,6 +4,7 @@ import (
 	"mianshiya-go-backend/internal/config"
 	"mianshiya-go-backend/internal/db"
 	"mianshiya-go-backend/internal/router"
+	"mianshiya-go-backend/internal/user"
 
 	"github.com/gin-gonic/gin"
 )
@@ -17,10 +18,12 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	_ = database
+	if err := database.AutoMigrate(&user.User{}); err != nil {
+		panic(err)
+	}
 	r := gin.Default()
 
-	router.RegisterRouter(r)
+	router.RegisterRouter(r, database)
 
 	r.Run("0.0.0.0:8101")
 }
