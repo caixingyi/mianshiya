@@ -9,7 +9,7 @@ import (
 	"mianshiya-go-backend/internal/user"
 )
 
-func RegisterRouter(r *gin.Engine, database *gorm.DB, tokenStore *auth.MemoryTokenStore) {
+func RegisterRouter(r *gin.Engine, database *gorm.DB, tokenStore auth.TokenStore) {
 	api := r.Group("/api")
 
 	api.GET("/health", handler.HealthHandler)

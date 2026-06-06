@@ -11,11 +11,11 @@ import (
 // Handler 层负责处理 HTTP 请求，调用 Service 层执行业务逻辑，并返回 HTTP 响应
 type Handler struct {
 	service    *Service
-	tokenStore *auth.MemoryTokenStore
+	tokenStore auth.TokenStore
 }
 
 // 构造函数
-func NewHandler(service *Service, tokenStore *auth.MemoryTokenStore) *Handler {
+func NewHandler(service *Service, tokenStore auth.TokenStore) *Handler {
 	return &Handler{
 		service:    service,
 		tokenStore: tokenStore,
@@ -31,12 +31,12 @@ func (h *Handler) RegisterHandler(c *gin.Context) {
 		return
 	}
 	// 2. 调用 Service 层注册用户
-	userId, err := h.service.Register(&req)
+	userID, err := h.service.Register(&req)
 	if err != nil {
 		c.JSON(200, response.ErrorWithMessage(errorcode.ParamsError, err.Error()))
 		return
 	}
-	c.JSON(200, response.Success(userId))
+	c.JSON(200, response.Success(userID))
 }
 
 // 登录 Handler
@@ -54,7 +54,7 @@ func (h *Handler) LoginHandler(c *gin.Context) {
 		return
 	}
 	// 3. 生成 token
-	token, err := h.tokenStore.CreateToken(user.ID)
+	token, err := h.tokenStore.CreateToken(c.Request.Context(), user.ID)
 	if err != nil {
 		c.JSON(200, response.ErrorWithMessage(errorcode.SystemError, err.Error()))
 		return
@@ -101,6 +101,10 @@ func (h *Handler) LogoutHandler(c *gin.Context) {
 		return
 	}
 	// 2. 从 tokenStore 中删除 token
-	h.tokenStore.DeleteToken(token)
+	err := h.tokenStore.DeleteToken(c.Request.Context(), token)
+	if err != nil {
+		c.JSON(200, response.ErrorWithMessage(errorcode.SystemError, err.Error()))
+		return
+	}
 	c.JSON(200, response.Success(true))
 }

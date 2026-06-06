@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"sync"
@@ -17,7 +18,7 @@ func NewMemoryTokenStore() *MemoryTokenStore {
 	}
 }
 
-func (s *MemoryTokenStore) CreateToken(userID int64) (string, error) {
+func (s *MemoryTokenStore) CreateToken(ctx context.Context, userID int64) (string, error) {
 	// 生成随机 token
 	bytes := make([]byte, 32)
 	_, err := rand.Read(bytes)
@@ -33,15 +34,23 @@ func (s *MemoryTokenStore) CreateToken(userID int64) (string, error) {
 	return token, nil
 }
 
-func (s *MemoryTokenStore) GetUserID(token string) (int64, bool) {
+func (s *MemoryTokenStore) GetUserID(ctx context.Context, token string) (int64, bool, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	userID, exists := s.tokenToUserID[token]
-	return userID, exists
+	return userID, exists, nil
 }
 
-func (s *MemoryTokenStore) DeleteToken(token string) {
+func (s *MemoryTokenStore) DeleteToken(ctx context.Context, token string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	delete(s.tokenToUserID, token)
+	return nil
+}
+
+// TokenStore 定义了一个接口，抽象了 token 的创建、获取和删除操作，方便后续替换为 Redis 等持久化存储方案
+type TokenStore interface {
+	CreateToken(ctx context.Context, userID int64) (string, error)
+	GetUserID(ctx context.Context, token string) (int64, bool, error)
+	DeleteToken(ctx context.Context, token string) error
 }

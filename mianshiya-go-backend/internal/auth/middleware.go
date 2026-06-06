@@ -11,7 +11,7 @@ import (
 const ContextUserIDKey = "userID"
 const ContextTokenKey = "token"
 
-func AuthMiddleware(tokenStore *MemoryTokenStore) gin.HandlerFunc {
+func AuthMiddleware(tokenStore TokenStore) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// 从请求头中获取 token
 		authHeader := c.GetHeader("Authorization")
@@ -35,7 +35,12 @@ func AuthMiddleware(tokenStore *MemoryTokenStore) gin.HandlerFunc {
 			return
 		}
 		// 验证 token 是否有效
-		userID, exists := tokenStore.GetUserID(token)
+		userID, exists, err := tokenStore.GetUserID(c.Request.Context(), token)
+		if err != nil {
+			c.JSON(200, response.ErrorWithMessage(errorcode.SystemError, err.Error()))
+			c.Abort()
+			return
+		}
 		if !exists {
 			c.JSON(200, response.ErrorWithMessage(errorcode.NotLoginError, "Invalid token"))
 			c.Abort()
