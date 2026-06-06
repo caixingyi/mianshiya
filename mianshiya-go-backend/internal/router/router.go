@@ -21,4 +21,5 @@ func RegisterRouter(r *gin.Engine, database *gorm.DB, tokenStore *auth.MemoryTok
 	api.POST("/user/register", userHandler.RegisterHandler)
 	api.POST("/user/login", userHandler.LoginHandler)
 	api.GET("/user/get/login", auth.AuthMiddleware(tokenStore), userHandler.GetLoginUserHandler)
+	api.POST("/user/logout", auth.AuthMiddleware(tokenStore), userHandler.LogoutHandler)
 }

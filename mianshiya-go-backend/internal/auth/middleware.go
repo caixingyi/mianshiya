@@ -8,6 +8,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+const ContextUserIDKey = "userID"
+const ContextTokenKey = "token"
+
 func AuthMiddleware(tokenStore *MemoryTokenStore) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// 从请求头中获取 token
@@ -39,7 +42,10 @@ func AuthMiddleware(tokenStore *MemoryTokenStore) gin.HandlerFunc {
 			return
 		}
 		// 将 userID 存储到上下文中
-		c.Set("userID", userID)
+		c.Set(ContextUserIDKey, userID)
+		// 将 token 存储到上下文中，方便后续处理
+		c.Set(ContextTokenKey, token)
+		// 继续处理请求
 		c.Next()
 	}
 }

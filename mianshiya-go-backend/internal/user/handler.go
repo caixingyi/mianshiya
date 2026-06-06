@@ -8,11 +8,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// Handler 层负责处理 HTTP 请求，调用 Service 层执行业务逻辑，并返回 HTTP 响应
 type Handler struct {
 	service    *Service
 	tokenStore *auth.MemoryTokenStore
 }
 
+// 构造函数
 func NewHandler(service *Service, tokenStore *auth.MemoryTokenStore) *Handler {
 	return &Handler{
 		service:    service,
@@ -20,6 +22,7 @@ func NewHandler(service *Service, tokenStore *auth.MemoryTokenStore) *Handler {
 	}
 }
 
+// 注册 Handler
 func (h *Handler) RegisterHandler(c *gin.Context) {
 	// 1. 解析请求参数
 	var req RegisterRequest
@@ -36,6 +39,7 @@ func (h *Handler) RegisterHandler(c *gin.Context) {
 	c.JSON(200, response.Success(userId))
 }
 
+// 登录 Handler
 func (h *Handler) LoginHandler(c *gin.Context) {
 	// 1. 解析请求参数
 	var req LoginRequest
@@ -61,9 +65,10 @@ func (h *Handler) LoginHandler(c *gin.Context) {
 	}))
 }
 
+// 获取当前登录用户信息的 Handler
 func (h *Handler) GetLoginUserHandler(c *gin.Context) {
 	// 1. 从上下文中获取 userID
-	value, exists := c.Get("userID")
+	value, exists := c.Get(auth.ContextUserIDKey)
 	if !exists {
 		c.JSON(200, response.Error(errorcode.NotLoginError))
 		return
@@ -80,4 +85,22 @@ func (h *Handler) GetLoginUserHandler(c *gin.Context) {
 		return
 	}
 	c.JSON(200, response.Success(user))
+}
+
+// 退出登录 Handler
+func (h *Handler) LogoutHandler(c *gin.Context) {
+	// 1. 从上下文中获取 token
+	value, exists := c.Get(auth.ContextTokenKey)
+	if !exists {
+		c.JSON(200, response.Error(errorcode.NotLoginError))
+		return
+	}
+	token, ok := value.(string)
+	if !ok {
+		c.JSON(200, response.Error(errorcode.SystemError))
+		return
+	}
+	// 2. 从 tokenStore 中删除 token
+	h.tokenStore.DeleteToken(token)
+	c.JSON(200, response.Success(true))
 }
