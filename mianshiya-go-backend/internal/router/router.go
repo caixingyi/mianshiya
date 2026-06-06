@@ -4,11 +4,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
+	"mianshiya-go-backend/internal/auth"
 	"mianshiya-go-backend/internal/handler"
 	"mianshiya-go-backend/internal/user"
 )
 
-func RegisterRouter(r *gin.Engine, database *gorm.DB) {
+func RegisterRouter(r *gin.Engine, database *gorm.DB, tokenStore *auth.MemoryTokenStore) {
 	api := r.Group("/api")
 
 	api.GET("/health", handler.HealthHandler)
@@ -16,7 +17,8 @@ func RegisterRouter(r *gin.Engine, database *gorm.DB) {
 
 	repo := user.NewRepository(database)
 	service := user.NewService(repo)
-	userHandler := user.NewHandler(service)
+	userHandler := user.NewHandler(service, tokenStore)
 	api.POST("/user/register", userHandler.RegisterHandler)
 	api.POST("/user/login", userHandler.LoginHandler)
+	api.GET("/user/get/login", auth.AuthMiddleware(tokenStore), userHandler.GetLoginUserHandler)
 }

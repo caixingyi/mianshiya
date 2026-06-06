@@ -92,3 +92,15 @@ func (s *Service) Login(req *LoginRequest) (*LoginUserResponse, error) {
 		UserRole:    user.UserRole,
 	}, nil
 }
+
+func (s *Service) GetUserByID(id int64) (*LoginUserResponse, error) {
+	user, err := s.repo.FindByID(id)
+	if err != nil {
+		return nil, err
+	}
+	return &LoginUserResponse{
+		ID:          user.ID,
+		UserAccount: user.UserAccount,
+		UserRole:    user.UserRole,
+	}, nil
+}

@@ -26,3 +26,13 @@ func (r *Repository) Create(user *User) (int64, error) {
 	}
 	return user.ID, nil
 }
+
+// 按照 ID 查找用户
+func (r *Repository) FindByID(id int64) (*User, error) {
+	var user User
+	err := r.db.Where("id = ? AND is_delete = 0", id).First(&user).Error
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
