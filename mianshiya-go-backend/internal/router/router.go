@@ -18,8 +18,12 @@ func RegisterRouter(r *gin.Engine, database *gorm.DB, tokenStore *auth.MemoryTok
 	repo := user.NewRepository(database)
 	service := user.NewService(repo)
 	userHandler := user.NewHandler(service, tokenStore)
+	// 公开接口
 	api.POST("/user/register", userHandler.RegisterHandler)
 	api.POST("/user/login", userHandler.LoginHandler)
-	api.GET("/user/get/login", auth.AuthMiddleware(tokenStore), userHandler.GetLoginUserHandler)
-	api.POST("/user/logout", auth.AuthMiddleware(tokenStore), userHandler.LogoutHandler)
+	// 需要认证的接口
+	authAPI := api.Group("")
+	authAPI.Use(auth.AuthMiddleware(tokenStore))
+	authAPI.GET("/user/get/login", userHandler.GetLoginUserHandler)
+	authAPI.POST("/user/logout", userHandler.LogoutHandler)
 }
