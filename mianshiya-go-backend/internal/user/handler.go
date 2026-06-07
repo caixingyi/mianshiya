@@ -141,3 +141,20 @@ func (h *Handler) UpdateMyHandler(c *gin.Context) {
 func (h *Handler) AdminCheckHandler(c *gin.Context) {
 	c.JSON(200, response.Success(true))
 }
+
+// 管理员添加用户 Handler
+func (h *Handler) AddUserHandler(c *gin.Context) {
+	// 1. 解析请求参数
+	var req AddUserRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(200, response.Error(errorcode.ParamsError))
+		return
+	}
+	// 2. 调用 Service 层添加用户
+	userID, err := h.service.AddUser(&req)
+	if err != nil {
+		c.JSON(200, response.ErrorWithMessage(errorcode.ParamsError, err.Error()))
+		return
+	}
+	c.JSON(200, response.Success(userID))
+}

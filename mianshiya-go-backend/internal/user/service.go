@@ -146,3 +146,44 @@ func (s *Service) IsAdmin(userID int64) (bool, error) {
 	}
 	return user.UserRole == UserRoleAdmin, nil
 }
+
+// AddUser 管理员添加用户
+func (s *Service) AddUser(req *AddUserRequest) (int64, error) {
+	// 1. 校验参数
+	if req == nil {
+		return 0, errors.New("请求参数不能为空")
+	}
+	if req.UserAccount == "" {
+		return 0, errors.New("用户账号不能为空")
+	}
+	if len(req.UserAccount) < 4 {
+		return 0, errors.New("用户账号长度不能少于4位")
+	}
+	role := req.UserRole
+	if role == "" {
+		role = UserRoleUser
+	}
+	if role != UserRoleUser && role != UserRoleAdmin {
+		return 0, errors.New("用户角色不合法")
+	}
+	// 2. 判断账号是否已存在
+	existingUser, err := s.repo.FindByAccount(req.UserAccount)
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return 0, err
+	}
+	if existingUser != nil {
+		return 0, errors.New("账号已存在")
+	}
+	// 3. 加默认密码
+	encryptedPassword := encryptPassword("12345678")
+	// 4. 构造 User 对象
+	user := &User{
+		UserAccount:  req.UserAccount,
+		UserName:     req.UserName,
+		UserAvatar:   req.UserAvatar,
+		UserPassword: encryptedPassword,
+		UserRole:     role,
+	}
+	// 5. 写入数据库
+	return s.repo.Create(user)
+}

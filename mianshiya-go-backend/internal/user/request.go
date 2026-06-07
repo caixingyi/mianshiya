@@ -19,3 +19,11 @@ type UpdateMyRequest struct {
 	UserAvatar  string `json:"userAvatar"`
 	UserProfile string `json:"userProfile"`
 }
+
+// 管理员更新用户信息请求参数
+type AddUserRequest struct {
+	UserAccount string `json:"userAccount"`
+	UserName    string `json:"userName"`
+	UserAvatar  string `json:"userAvatar"`
+	UserRole    string `json:"userRole"`
+}
