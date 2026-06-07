@@ -32,3 +32,12 @@ type AddUserRequest struct {
 type DeleteUserRequest struct {
 	ID int64 `json:"id"`
 }
+
+// 管理员更新用户信息请求参数
+type UpdateUserRequest struct {
+	ID          int64  `json:"id"`
+	UserName    string `json:"userName"`
+	UserAvatar  string `json:"userAvatar"`
+	UserProfile string `json:"userProfile"`
+	UserRole    string `json:"userRole"`
+}

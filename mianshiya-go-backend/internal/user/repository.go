@@ -42,7 +42,14 @@ func (r *Repository) FindByID(id int64) (*User, error) {
 // UpdateByID 根据 ID 更新用户信息
 func (r *Repository) UpdateByID(id int64, updates map[string]any) error {
 	result := r.db.Model(&User{}).Where("id = ? AND is_delete = 0", id).Updates(updates)
-	return result.Error
+	if result.Error != nil {
+		return result.Error
+	}
+	// 如果没有任何记录被更新，说明用户不存在或已经被删除
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
 }
 
 // DeleteByID 根据 ID 删除用户（软删除）

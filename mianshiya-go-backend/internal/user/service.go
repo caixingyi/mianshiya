@@ -195,3 +195,33 @@ func (s *Service) DeleteUser(id int64) error {
 	}
 	return s.repo.DeleteByID(id)
 }
+
+// UpdateUser 管理员更新用户信息
+func (s *Service) UpdateUser(id int64, req *UpdateUserRequest) error {
+	if id <= 0 {
+		return errors.New("参数错误")
+	}
+	if req == nil {
+		return errors.New("请求参数不能为空")
+	}
+	updates := make(map[string]any)
+	if req.UserName != "" {
+		updates["user_name"] = req.UserName
+	}
+	if req.UserAvatar != "" {
+		updates["user_avatar"] = req.UserAvatar
+	}
+	if req.UserProfile != "" {
+		updates["user_profile"] = req.UserProfile
+	}
+	if req.UserRole != "" {
+		if req.UserRole != UserRoleUser && req.UserRole != UserRoleAdmin && req.UserRole != UserRoleBan {
+			return errors.New("用户角色不合法")
+		}
+		updates["user_role"] = req.UserRole
+	}
+	if len(updates) == 0 {
+		return errors.New("没有要更新的字段")
+	}
+	return s.repo.UpdateByID(id, updates)
+}

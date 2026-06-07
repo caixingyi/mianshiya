@@ -131,7 +131,7 @@ func (h *Handler) UpdateMyHandler(c *gin.Context) {
 	// 3. 调用 Service 层更新用户信息
 	err := h.service.UpdateMy(userID, &req)
 	if err != nil {
-		c.JSON(200, response.ErrorWithMessage(errorcode.SystemError, err.Error()))
+		c.JSON(200, response.ErrorWithMessage(errorcode.ParamsError, err.Error()))
 		return
 	}
 	c.JSON(200, response.Success(true))
@@ -169,6 +169,23 @@ func (h *Handler) DeleteUserHandler(c *gin.Context) {
 	}
 	// 2. 调用 Service 层删除用户
 	err := h.service.DeleteUser(req.ID)
+	if err != nil {
+		c.JSON(200, response.ErrorWithMessage(errorcode.ParamsError, err.Error()))
+		return
+	}
+	c.JSON(200, response.Success(true))
+}
+
+// 管理员更新用户 Handler
+func (h *Handler) UpdateUserHandler(c *gin.Context) {
+	// 1. 解析请求参数
+	var req UpdateUserRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(200, response.ErrorWithMessage(errorcode.ParamsError, err.Error()))
+		return
+	}
+	// 2. 调用 Service 层更新用户信息
+	err := h.service.UpdateUser(req.ID, &req)
 	if err != nil {
 		c.JSON(200, response.ErrorWithMessage(errorcode.ParamsError, err.Error()))
 		return
