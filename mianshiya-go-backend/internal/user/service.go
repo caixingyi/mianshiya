@@ -54,7 +54,7 @@ func (s *Service) Register(req *RegisterRequest) (int64, error) {
 	user := &User{
 		UserAccount:  req.UserAccount,
 		UserPassword: encryptedPassword,
-		UserRole:     "user",
+		UserRole:     UserRoleUser,
 	}
 
 	// 5. 写入数据库
@@ -133,4 +133,16 @@ func (s *Service) UpdateMy(userID int64, req *UpdateMyRequest) error {
 	}
 
 	return s.repo.UpdateByID(userID, updates)
+}
+
+// IsAdmin 判断用户是否为管理员
+func (s *Service) IsAdmin(userID int64) (bool, error) {
+	if userID <= 0 {
+		return false, errors.New("无效的用户ID")
+	}
+	user, err := s.repo.FindByID(userID)
+	if err != nil {
+		return false, err
+	}
+	return user.UserRole == UserRoleAdmin, nil
 }

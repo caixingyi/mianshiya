@@ -27,4 +27,8 @@ func RegisterRouter(r *gin.Engine, database *gorm.DB, tokenStore auth.TokenStore
 	authAPI.GET("/user/get/login", userHandler.GetLoginUserHandler)
 	authAPI.POST("/user/logout", userHandler.LogoutHandler)
 	authAPI.POST("/user/update/my", userHandler.UpdateMyHandler)
+	// 管理员接口
+	adminAPI := api.Group("")
+	adminAPI.Use(auth.AuthMiddleware(tokenStore), user.AdminMiddleware(service))
+	adminAPI.GET("/user/admin/check", userHandler.AdminCheckHandler)
 }
