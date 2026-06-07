@@ -8,6 +8,7 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+// InitRedis 初始化 Redis 客户端并测试连接，如果连接成功返回 Redis 客户端实例，否则返回错误
 func InitRedis(cfg config.RedisConfig) (*redis.Client, error) {
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     fmt.Sprintf("%s:%d", cfg.Host, cfg.Port),
