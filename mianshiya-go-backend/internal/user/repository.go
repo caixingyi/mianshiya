@@ -10,6 +10,7 @@ func NewRepository(db *gorm.DB) *Repository {
 	return &Repository{db: db}
 }
 
+// FindByAccount 根据账号查找用户
 func (r *Repository) FindByAccount(account string) (*User, error) {
 	var user User
 	err := r.db.Where("user_account = ? AND is_delete = 0", account).First(&user).Error
@@ -19,6 +20,7 @@ func (r *Repository) FindByAccount(account string) (*User, error) {
 	return &user, nil
 }
 
+// Create 创建新用户
 func (r *Repository) Create(user *User) (int64, error) {
 	err := r.db.Create(user).Error
 	if err != nil {
@@ -35,4 +37,10 @@ func (r *Repository) FindByID(id int64) (*User, error) {
 		return nil, err
 	}
 	return &user, nil
+}
+
+// UpdateByID 根据 ID 更新用户信息
+func (r *Repository) UpdateByID(id int64, updates map[string]any) error {
+	result := r.db.Model(&User{}).Where("id = ? AND is_delete = 0", id).Updates(updates)
+	return result.Error
 }

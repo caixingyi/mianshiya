@@ -108,3 +108,31 @@ func (h *Handler) LogoutHandler(c *gin.Context) {
 	}
 	c.JSON(200, response.Success(true))
 }
+
+// 更新当前登录用户信息的 Handler
+func (h *Handler) UpdateMyHandler(c *gin.Context) {
+	// 1. 从上下文中获取 userID
+	value, exists := c.Get(auth.ContextUserIDKey)
+	if !exists {
+		c.JSON(200, response.Error(errorcode.NotLoginError))
+		return
+	}
+	userID, ok := value.(int64)
+	if !ok {
+		c.JSON(200, response.Error(errorcode.SystemError))
+		return
+	}
+	// 2. 解析请求参数
+	var req UpdateMyRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(200, response.Error(errorcode.ParamsError))
+		return
+	}
+	// 3. 调用 Service 层更新用户信息
+	err := h.service.UpdateMy(userID, &req)
+	if err != nil {
+		c.JSON(200, response.ErrorWithMessage(errorcode.SystemError, err.Error()))
+		return
+	}
+	c.JSON(200, response.Success(true))
+}

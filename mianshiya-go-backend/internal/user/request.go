@@ -1,12 +1,21 @@
 package user
 
+// 用户注册请求参数
 type RegisterRequest struct {
 	UserAccount   string `json:"userAccount"`
 	UserPassword  string `json:"userPassword"`
 	CheckPassword string `json:"checkPassword"`
 }
 
+// 登录请求参数
 type LoginRequest struct {
 	UserAccount  string `json:"userAccount"`
 	UserPassword string `json:"userPassword"`
+}
+
+// 更新用户信息请求参数
+type UpdateMyRequest struct {
+	UserName    string `json:"userName"`
+	UserAvatar  string `json:"userAvatar"`
+	UserProfile string `json:"userProfile"`
 }

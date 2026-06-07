@@ -61,6 +61,17 @@ func (s *Service) Register(req *RegisterRequest) (int64, error) {
 	return s.repo.Create(user)
 }
 
+func toLoginUserResponse(user *User) *LoginUserResponse {
+	return &LoginUserResponse{
+		ID:          user.ID,
+		UserAccount: user.UserAccount,
+		UserRole:    user.UserRole,
+		UserName:    user.UserName,
+		UserAvatar:  user.UserAvatar,
+		UserProfile: user.UserProfile,
+	}
+}
+
 func (s *Service) Login(req *LoginRequest) (*LoginUserResponse, error) {
 	// 1. 校验参数
 	if req.UserAccount == "" || req.UserPassword == "" {
@@ -86,11 +97,7 @@ func (s *Service) Login(req *LoginRequest) (*LoginUserResponse, error) {
 	}
 
 	// 4. 返回登录成功响应
-	return &LoginUserResponse{
-		ID:          user.ID,
-		UserAccount: user.UserAccount,
-		UserRole:    user.UserRole,
-	}, nil
+	return toLoginUserResponse(user), nil
 }
 
 func (s *Service) GetUserByID(id int64) (*LoginUserResponse, error) {
@@ -98,9 +105,32 @@ func (s *Service) GetUserByID(id int64) (*LoginUserResponse, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &LoginUserResponse{
-		ID:          user.ID,
-		UserAccount: user.UserAccount,
-		UserRole:    user.UserRole,
-	}, nil
+	return toLoginUserResponse(user), nil
+}
+
+func (s *Service) UpdateMy(userID int64, req *UpdateMyRequest) error {
+	if userID <= 0 {
+		return errors.New("无效的用户ID")
+	}
+
+	if req == nil {
+		return errors.New("请求参数不能为空")
+	}
+
+	updates := make(map[string]any)
+	if req.UserName != "" {
+		updates["user_name"] = req.UserName
+	}
+	if req.UserAvatar != "" {
+		updates["user_avatar"] = req.UserAvatar
+	}
+	if req.UserProfile != "" {
+		updates["user_profile"] = req.UserProfile
+	}
+
+	if len(updates) == 0 {
+		return errors.New("没有要更新的字段")
+	}
+
+	return s.repo.UpdateByID(userID, updates)
 }
