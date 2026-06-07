@@ -187,3 +187,11 @@ func (s *Service) AddUser(req *AddUserRequest) (int64, error) {
 	// 5. 写入数据库
 	return s.repo.Create(user)
 }
+
+// DeleteUser 管理员删除用户
+func (s *Service) DeleteUser(id int64) error {
+	if id <= 0 {
+		return errors.New("参数错误")
+	}
+	return s.repo.DeleteByID(id)
+}

@@ -32,4 +32,5 @@ func RegisterRouter(r *gin.Engine, database *gorm.DB, tokenStore auth.TokenStore
 	adminAPI.Use(auth.AuthMiddleware(tokenStore), user.AdminMiddleware(service))
 	adminAPI.GET("/user/admin/check", userHandler.AdminCheckHandler)
 	adminAPI.POST("/user/add", userHandler.AddUserHandler)
+	adminAPI.POST("/user/delete", userHandler.DeleteUserHandler)
 }

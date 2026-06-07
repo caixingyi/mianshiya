@@ -158,3 +158,20 @@ func (h *Handler) AddUserHandler(c *gin.Context) {
 	}
 	c.JSON(200, response.Success(userID))
 }
+
+// 管理员删除用户 Handler
+func (h *Handler) DeleteUserHandler(c *gin.Context) {
+	// 1. 解析请求参数
+	var req DeleteUserRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(200, response.Error(errorcode.ParamsError))
+		return
+	}
+	// 2. 调用 Service 层删除用户
+	err := h.service.DeleteUser(req.ID)
+	if err != nil {
+		c.JSON(200, response.ErrorWithMessage(errorcode.ParamsError, err.Error()))
+		return
+	}
+	c.JSON(200, response.Success(true))
+}

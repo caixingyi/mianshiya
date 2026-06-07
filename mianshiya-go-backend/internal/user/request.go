@@ -27,3 +27,8 @@ type AddUserRequest struct {
 	UserAvatar  string `json:"userAvatar"`
 	UserRole    string `json:"userRole"`
 }
+
+// 删除用户请求参数
+type DeleteUserRequest struct {
+	ID int64 `json:"id"`
+}
