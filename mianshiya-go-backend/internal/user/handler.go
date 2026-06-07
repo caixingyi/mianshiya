@@ -192,3 +192,20 @@ func (h *Handler) UpdateUserHandler(c *gin.Context) {
 	}
 	c.JSON(200, response.Success(true))
 }
+
+func (h *Handler) ListUserHandler(c *gin.Context) {
+	// 1. 解析请求参数
+	var req ListUserRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(200, response.ErrorWithMessage(errorcode.ParamsError, err.Error()))
+		return
+	}
+	// 2. 调用 Service 层查询用户列表
+	users, err := h.service.ListUsers(&req)
+	if err != nil {
+		c.JSON(200, response.ErrorWithMessage(errorcode.ParamsError, err.Error()))
+		return
+	}
+	// 3. 返回用户列表
+	c.JSON(200, response.Success(users))
+}

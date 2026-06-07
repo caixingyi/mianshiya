@@ -64,3 +64,34 @@ func (r *Repository) DeleteByID(id int64) error {
 	}
 	return nil
 }
+
+// List 根据条件分页查询用户列表
+func (r *Repository) List(req *ListUserRequest) ([]*User, int64, error) {
+	result := make([]*User, 0)
+	// 构造查询条件
+	query := r.db.Model(&User{}).Where("is_delete = 0")
+	// 根据 ID 查询
+	if req.ID > 0 {
+		query = query.Where("id = ?", req.ID)
+	}
+	// 根据用户名模糊查询
+	if req.UserName != "" {
+		query = query.Where("user_name LIKE ?", "%"+req.UserName+"%")
+	}
+	// 根据用户角色查询
+	if req.UserRole != "" {
+		query = query.Where("user_role = ?", req.UserRole)
+	}
+	// 统计总记录数
+	var total int64
+	err := query.Count(&total).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	// 分页查询
+	err = query.Offset(int((req.Current - 1) * req.PageSize)).Limit(int(req.PageSize)).Find(&result).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	return result, total, nil
+}

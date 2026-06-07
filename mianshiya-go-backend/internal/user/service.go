@@ -225,3 +225,46 @@ func (s *Service) UpdateUser(id int64, req *UpdateUserRequest) error {
 	}
 	return s.repo.UpdateByID(id, updates)
 }
+
+func (s *Service) ListUsers(req *ListUserRequest) (*PageResponse[UserResponse], error) {
+	// 1. 校验参数
+	if req == nil {
+		return nil, errors.New("请求参数不能为空")
+	}
+	if req.Current <= 0 {
+		req.Current = 1
+	}
+	if req.PageSize <= 0 {
+		req.PageSize = 10
+	}
+	if req.PageSize > 50 {
+		return nil, errors.New("参数错误")
+	}
+	if req.UserRole != "" && req.UserRole != UserRoleUser && req.UserRole != UserRoleAdmin && req.UserRole != UserRoleBan {
+		return nil, errors.New("用户角色不合法")
+	}
+	// 2. 调用 Repository 层查询用户列表
+	users, total, err := s.repo.List(req)
+	if err != nil {
+		return nil, err
+	}
+	// 3. 构造响应数据
+	userResponses := make([]UserResponse, len(users))
+	for i, user := range users {
+		userResponses[i] = UserResponse{
+			ID:          user.ID,
+			UserAccount: user.UserAccount,
+			UserName:    user.UserName,
+			UserAvatar:  user.UserAvatar,
+			UserProfile: user.UserProfile,
+			UserRole:    user.UserRole,
+		}
+	}
+	// 4. 返回分页响应
+	return &PageResponse[UserResponse]{
+		Records:  userResponses,
+		Total:    total,
+		Current:  req.Current,
+		PageSize: req.PageSize,
+	}, nil
+}

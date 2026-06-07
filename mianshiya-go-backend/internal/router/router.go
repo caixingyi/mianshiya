@@ -34,4 +34,5 @@ func RegisterRouter(r *gin.Engine, database *gorm.DB, tokenStore auth.TokenStore
 	adminAPI.POST("/user/add", userHandler.AddUserHandler)
 	adminAPI.POST("/user/delete", userHandler.DeleteUserHandler)
 	adminAPI.POST("/user/update", userHandler.UpdateUserHandler)
+	adminAPI.POST("/user/list/page", userHandler.ListUserHandler)
 }

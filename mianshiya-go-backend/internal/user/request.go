@@ -41,3 +41,12 @@ type UpdateUserRequest struct {
 	UserProfile string `json:"userProfile"`
 	UserRole    string `json:"userRole"`
 }
+
+// 列表用户请求参数
+type ListUserRequest struct {
+	Current  int64  `json:"current"`
+	PageSize int64  `json:"pageSize"`
+	ID       int64  `json:"id"`
+	UserName string `json:"userName"`
+	UserRole string `json:"userRole"`
+}
