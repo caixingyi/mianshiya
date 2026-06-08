@@ -50,3 +50,8 @@ type ListUserRequest struct {
 	UserName string `json:"userName"`
 	UserRole string `json:"userRole"`
 }
+
+// 根据 ID 获取用户信息请求参数
+type GetUserRequest struct {
+	ID int64 `form:"id"`
+}

@@ -24,6 +24,7 @@ type PageResponse[T any] struct {
 	PageSize int64 `json:"pageSize"`
 }
 
+// UserResponse 包含用户信息的响应结构
 type UserResponse struct {
 	ID          int64  `json:"id"`
 	UserAccount string `json:"userAccount"`

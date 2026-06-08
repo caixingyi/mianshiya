@@ -1,11 +1,13 @@
 package user
 
 import (
+	"errors"
 	"mianshiya-go-backend/internal/auth"
 	"mianshiya-go-backend/internal/errorcode"
 	"mianshiya-go-backend/internal/response"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 // Handler 层负责处理 HTTP 请求，调用 Service 层执行业务逻辑，并返回 HTTP 响应
@@ -208,4 +210,48 @@ func (h *Handler) ListUserHandler(c *gin.Context) {
 	}
 	// 3. 返回用户列表
 	c.JSON(200, response.Success(users))
+}
+
+// 获取用户信息 Handler
+func (h *Handler) GetUserHandler(c *gin.Context) {
+	// 1. 解析请求参数
+	var req GetUserRequest
+	if err := c.ShouldBindQuery(&req); err != nil {
+		c.JSON(200, response.ErrorWithMessage(errorcode.ParamsError, err.Error()))
+		return
+	}
+	// 2. 调用 Service 层查询用户信息
+	user, err := h.service.GetUserResponseByID(req.ID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		c.JSON(200, response.Error(errorcode.NotFoundError))
+		return
+	}
+	if err != nil {
+		c.JSON(200, response.ErrorWithMessage(errorcode.ParamsError, err.Error()))
+		return
+	}
+	// 3. 返回用户信息
+	c.JSON(200, response.Success(user))
+}
+
+// VO获取用户信息 Handler
+func (h *Handler) GetUserVOHandler(c *gin.Context) {
+	// 1. 解析请求参数
+	var req GetUserRequest
+	if err := c.ShouldBindQuery(&req); err != nil {
+		c.JSON(200, response.ErrorWithMessage(errorcode.ParamsError, err.Error()))
+		return
+	}
+	// 2. 调用 Service 层查询用户信息
+	user, err := h.service.GetUserResponseByID(req.ID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		c.JSON(200, response.Error(errorcode.NotFoundError))
+		return
+	}
+	if err != nil {
+		c.JSON(200, response.ErrorWithMessage(errorcode.ParamsError, err.Error()))
+		return
+	}
+	// 3. 返回用户信息
+	c.JSON(200, response.Success(user))
 }

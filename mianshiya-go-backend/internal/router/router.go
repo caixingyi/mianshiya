@@ -21,6 +21,7 @@ func RegisterRouter(r *gin.Engine, database *gorm.DB, tokenStore auth.TokenStore
 	// 公开接口
 	api.POST("/user/register", userHandler.RegisterHandler)
 	api.POST("/user/login", userHandler.LoginHandler)
+	api.GET("/user/get/vo", userHandler.GetUserVOHandler)
 	// 需要认证的接口
 	authAPI := api.Group("")
 	authAPI.Use(auth.AuthMiddleware(tokenStore))
@@ -35,4 +36,5 @@ func RegisterRouter(r *gin.Engine, database *gorm.DB, tokenStore auth.TokenStore
 	adminAPI.POST("/user/delete", userHandler.DeleteUserHandler)
 	adminAPI.POST("/user/update", userHandler.UpdateUserHandler)
 	adminAPI.POST("/user/list/page", userHandler.ListUserHandler)
+	adminAPI.GET("/user/get", userHandler.GetUserHandler)
 }

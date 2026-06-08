@@ -251,14 +251,7 @@ func (s *Service) ListUsers(req *ListUserRequest) (*PageResponse[UserResponse], 
 	// 3. 构造响应数据
 	userResponses := make([]UserResponse, len(users))
 	for i, user := range users {
-		userResponses[i] = UserResponse{
-			ID:          user.ID,
-			UserAccount: user.UserAccount,
-			UserName:    user.UserName,
-			UserAvatar:  user.UserAvatar,
-			UserProfile: user.UserProfile,
-			UserRole:    user.UserRole,
-		}
+		userResponses[i] = *toUserResponse(user)
 	}
 	// 4. 返回分页响应
 	return &PageResponse[UserResponse]{
@@ -267,4 +260,28 @@ func (s *Service) ListUsers(req *ListUserRequest) (*PageResponse[UserResponse], 
 		Current:  req.Current,
 		PageSize: req.PageSize,
 	}, nil
+}
+
+// 转换为用户响应结构
+func toUserResponse(user *User) *UserResponse {
+	return &UserResponse{
+		ID:          user.ID,
+		UserAccount: user.UserAccount,
+		UserName:    user.UserName,
+		UserAvatar:  user.UserAvatar,
+		UserProfile: user.UserProfile,
+		UserRole:    user.UserRole,
+	}
+}
+
+// GetUserResponseByID 根据用户 ID 获取用户信息
+func (s *Service) GetUserResponseByID(id int64) (*UserResponse, error) {
+	if id <= 0 {
+		return nil, errors.New("参数错误")
+	}
+	user, err := s.repo.FindByID(id)
+	if err != nil {
+		return nil, err
+	}
+	return toUserResponse(user), nil
 }
