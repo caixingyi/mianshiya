@@ -4,6 +4,7 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"errors"
+	"mianshiya-go-backend/internal/response"
 
 	"gorm.io/gorm"
 )
@@ -226,7 +227,7 @@ func (s *Service) UpdateUser(id int64, req *UpdateUserRequest) error {
 	return s.repo.UpdateByID(id, updates)
 }
 
-func (s *Service) ListUsers(req *ListUserRequest) (*PageResponse[UserResponse], error) {
+func (s *Service) ListUsers(req *ListUserRequest) (*response.PageResponse[UserResponse], error) {
 	// 1. 校验参数
 	if req == nil {
 		return nil, errors.New("请求参数不能为空")
@@ -254,7 +255,7 @@ func (s *Service) ListUsers(req *ListUserRequest) (*PageResponse[UserResponse], 
 		userResponses[i] = *toUserResponse(user)
 	}
 	// 4. 返回分页响应
-	return &PageResponse[UserResponse]{
+	return &response.PageResponse[UserResponse]{
 		Records:  userResponses,
 		Total:    total,
 		Current:  req.Current,

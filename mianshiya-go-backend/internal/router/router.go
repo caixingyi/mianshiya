@@ -6,6 +6,7 @@ import (
 
 	"mianshiya-go-backend/internal/auth"
 	"mianshiya-go-backend/internal/handler"
+	"mianshiya-go-backend/internal/questionbank"
 	"mianshiya-go-backend/internal/user"
 )
 
@@ -18,10 +19,13 @@ func RegisterRouter(r *gin.Engine, database *gorm.DB, tokenStore auth.TokenStore
 	repo := user.NewRepository(database)
 	service := user.NewService(repo)
 	userHandler := user.NewHandler(service, tokenStore)
+	questionBankHandler := questionbank.NewHandler(questionbank.NewService(questionbank.NewRepository(database)))
 	// 公开接口
 	api.POST("/user/register", userHandler.RegisterHandler)
 	api.POST("/user/login", userHandler.LoginHandler)
 	api.GET("/user/get/vo", userHandler.GetUserVOHandler)
+	api.GET("/questionBank/get/vo", questionBankHandler.GetQuestionBankVOHandler)
+	api.POST("/questionBank/list/page/vo", questionBankHandler.ListQuestionBankVOHandler)
 	// 需要认证的接口
 	authAPI := api.Group("")
 	authAPI.Use(auth.AuthMiddleware(tokenStore))
@@ -37,4 +41,5 @@ func RegisterRouter(r *gin.Engine, database *gorm.DB, tokenStore auth.TokenStore
 	adminAPI.POST("/user/update", userHandler.UpdateUserHandler)
 	adminAPI.POST("/user/list/page", userHandler.ListUserHandler)
 	adminAPI.GET("/user/get", userHandler.GetUserHandler)
+	adminAPI.POST("/questionBank/add", questionBankHandler.AddQuestionBankHandler)
 }
