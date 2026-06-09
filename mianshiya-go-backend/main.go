@@ -4,6 +4,7 @@ import (
 	"mianshiya-go-backend/internal/auth"
 	"mianshiya-go-backend/internal/config"
 	"mianshiya-go-backend/internal/db"
+	"mianshiya-go-backend/internal/question"
 	"mianshiya-go-backend/internal/questionbank"
 	"mianshiya-go-backend/internal/router"
 	"mianshiya-go-backend/internal/user"
@@ -35,7 +36,7 @@ func main() {
 	tokenStore := auth.NewRedisTokenStore(rdb, 7*24*time.Hour)
 
 	// 自动迁移 User 和 QuestionBank 模型
-	if err := database.AutoMigrate(&user.User{}, &questionbank.QuestionBank{}); err != nil {
+	if err := database.AutoMigrate(&user.User{}, &questionbank.QuestionBank{}, &question.Question{}); err != nil {
 		panic(err)
 	}
 
