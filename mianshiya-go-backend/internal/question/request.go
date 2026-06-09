@@ -27,3 +27,17 @@ type ListQuestionRequest struct {
 	QuestionBankID int64    `json:"questionBankId"`
 	UserID         int64    `json:"userId"`
 }
+
+// DeleteQuestionRequest 删除题目的请求参数
+type DeleteQuestionRequest struct {
+	ID int64 `json:"id"`
+}
+
+// UpdateQuestionRequest 更新题目的请求参数
+type UpdateQuestionRequest struct {
+	ID      int64    `json:"id"`
+	Title   string   `json:"title"`
+	Content string   `json:"content"`
+	Tags    []string `json:"tags"`
+	Answer  string   `json:"answer"`
+}

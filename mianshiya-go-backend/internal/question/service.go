@@ -120,3 +120,42 @@ func (s *Service) ListQuestions(req *ListQuestionRequest) (*response.PageRespons
 		Records:  responses,
 	}, nil
 }
+
+// DeleteQuestion 删除题目
+func (s *Service) DeleteQuestion(id int64) error {
+	if id <= 0 {
+		return errors.New("参数错误")
+	}
+	return s.repo.DeleteByID(id)
+}
+
+// UpdateQuestion 更新题目
+func (s *Service) UpdateQuestion(req *UpdateQuestionRequest) error {
+	if req == nil || req.ID <= 0 {
+		return errors.New("参数错误")
+	}
+
+	updates := make(map[string]any)
+
+	if req.Title != "" {
+		updates["title"] = req.Title
+	}
+	if req.Content != "" {
+		updates["content"] = req.Content
+	}
+	if req.Answer != "" {
+		updates["answer"] = req.Answer
+	}
+	if req.Tags != nil {
+		tagsBytes, err := json.Marshal(req.Tags)
+		if err != nil {
+			return err
+		}
+		updates["tags"] = string(tagsBytes)
+	}
+	if len(updates) == 0 {
+		return errors.New("没有要更新的字段")
+	}
+
+	return s.repo.UpdateByID(req.ID, updates)
+}
