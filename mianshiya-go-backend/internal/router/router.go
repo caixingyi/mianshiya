@@ -8,6 +8,7 @@ import (
 	"mianshiya-go-backend/internal/handler"
 	"mianshiya-go-backend/internal/question"
 	"mianshiya-go-backend/internal/questionbank"
+	"mianshiya-go-backend/internal/questionbankquestion"
 	"mianshiya-go-backend/internal/user"
 )
 
@@ -17,11 +18,25 @@ func RegisterRouter(r *gin.Engine, database *gorm.DB, tokenStore auth.TokenStore
 	api.GET("/health", handler.HealthHandler)
 	api.GET("/error-demo", handler.ErrorDemoHandler)
 
-	repo := user.NewRepository(database)
-	service := user.NewService(repo)
-	userHandler := user.NewHandler(service, tokenStore)
-	questionBankHandler := questionbank.NewHandler(questionbank.NewService(questionbank.NewRepository(database)))
-	questionHandler := question.NewHandler(question.NewService(question.NewRepository(database)))
+	userRepo := user.NewRepository(database)
+	userService := user.NewService(userRepo)
+	userHandler := user.NewHandler(userService, tokenStore)
+
+	questionBankRepo := questionbank.NewRepository(database)
+	questionBankService := questionbank.NewService(questionBankRepo)
+	questionBankHandler := questionbank.NewHandler(questionBankService)
+
+	questionRepo := question.NewRepository(database)
+	questionService := question.NewService(questionRepo)
+	questionHandler := question.NewHandler(questionService)
+
+	questionBankQuestionRepo := questionbankquestion.NewRepository(database)
+	questionBankQuestionService := questionbankquestion.NewService(
+		questionBankQuestionRepo,
+		questionRepo,
+		questionBankRepo,
+	)
+	questionBankQuestionHandler := questionbankquestion.NewHandler(questionBankQuestionService)
 
 	// 公开接口
 	api.POST("/user/register", userHandler.RegisterHandler)
@@ -39,7 +54,7 @@ func RegisterRouter(r *gin.Engine, database *gorm.DB, tokenStore auth.TokenStore
 	authAPI.POST("/user/update/my", userHandler.UpdateMyHandler)
 	// 管理员接口
 	adminAPI := api.Group("")
-	adminAPI.Use(auth.AuthMiddleware(tokenStore), user.AdminMiddleware(service))
+	adminAPI.Use(auth.AuthMiddleware(tokenStore), user.AdminMiddleware(userService))
 	adminAPI.GET("/user/admin/check", userHandler.AdminCheckHandler)
 	adminAPI.POST("/user/add", userHandler.AddUserHandler)
 	adminAPI.POST("/user/delete", userHandler.DeleteUserHandler)
@@ -48,4 +63,6 @@ func RegisterRouter(r *gin.Engine, database *gorm.DB, tokenStore auth.TokenStore
 	adminAPI.GET("/user/get", userHandler.GetUserHandler)
 	adminAPI.POST("/questionBank/add", questionBankHandler.AddQuestionBankHandler)
 	adminAPI.POST("/question/add", questionHandler.AddQuestionHandler)
+	adminAPI.POST("/questionBankQuestion/add/batch", questionBankQuestionHandler.BatchAddQuestionsToBankHandler)
+	adminAPI.POST("/questionBankQuestion/remove/batch", questionBankQuestionHandler.BatchRemoveQuestionsFromBankHandler)
 }

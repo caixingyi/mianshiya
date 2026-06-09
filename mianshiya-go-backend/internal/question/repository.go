@@ -62,6 +62,22 @@ func (r *Repository) List(req *ListQuestionRequest) ([]*Question, int64, error) 
 	if req.UserID > 0 {
 		query = query.Where("user_id = ?", req.UserID)
 	}
+	if req.QuestionBankID > 0 {
+		questionIDs := make([]int64, 0)
+
+		err := r.db.Table("question_bank_questions").
+			Where("question_bank_id = ?", req.QuestionBankID).
+			Pluck("question_id", &questionIDs).Error
+		if err != nil {
+			return nil, 0, err
+		}
+
+		if len(questionIDs) == 0 {
+			return result, 0, nil
+		}
+
+		query = query.Where("id IN ?", questionIDs)
+	}
 	for _, tag := range req.Tags {
 		if tag != "" {
 			query = query.Where("tags LIKE ?", "%"+tag+"%")
