@@ -11,7 +11,12 @@ import { AppDispatch } from "@/stores";
 import { setLoginUser } from "@/stores/loginUser";
 import { ProForm } from "@ant-design/pro-form/lib";
 import { useRouter } from "next/navigation";
-import './index.css';
+import "./index.css";
+
+type LoginResult = {
+  token?: string;
+  user?: API.LoginUserVO;
+};
 
 /**
  * 用户登录页面
@@ -29,9 +34,15 @@ const UserLoginPage: React.FC = () => {
     try {
       const res = await userLoginUsingPost(values);
       if (res.data) {
+        const loginResult = res.data as unknown as LoginResult;
+        if (loginResult.token) {
+          localStorage.setItem("token", loginResult.token);
+        }
         message.success("登录成功");
         // 保存用户登录状态
-        dispatch(setLoginUser(res.data));
+        dispatch(
+          setLoginUser(loginResult.user ?? (res.data as API.LoginUserVO)),
+        );
         router.replace("/");
         form.resetFields();
       }

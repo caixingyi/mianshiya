@@ -46,12 +46,16 @@ func RegisterRouter(r *gin.Engine, database *gorm.DB, tokenStore auth.TokenStore
 	api.POST("/questionBank/list/page/vo", questionBankHandler.ListQuestionBankVOHandler)
 	api.GET("/question/get/vo", questionHandler.GetQuestionVOHandler)
 	api.POST("/question/list/page/vo", questionHandler.ListQuestionVOHandler)
+	api.POST("/question/search/page/vo", questionHandler.ListQuestionVOHandler)
+	api.GET("/questionBankQuestion/get/vo", questionBankQuestionHandler.GetQuestionBankQuestionVOHandler)
+	api.POST("/questionBankQuestion/list/page/vo", questionBankQuestionHandler.ListQuestionBankQuestionVOHandler)
 	// 需要认证的接口
 	authAPI := api.Group("")
 	authAPI.Use(auth.AuthMiddleware(tokenStore))
 	authAPI.GET("/user/get/login", userHandler.GetLoginUserHandler)
 	authAPI.POST("/user/logout", userHandler.LogoutHandler)
 	authAPI.POST("/user/update/my", userHandler.UpdateMyHandler)
+	authAPI.POST("/questionBankQuestion/my/list/page/vo", questionBankQuestionHandler.ListMyQuestionBankQuestionVOHandler)
 	// 管理员接口
 	adminAPI := api.Group("")
 	adminAPI.Use(auth.AuthMiddleware(tokenStore), user.AdminMiddleware(userService))
@@ -70,6 +74,11 @@ func RegisterRouter(r *gin.Engine, database *gorm.DB, tokenStore auth.TokenStore
 	adminAPI.POST("/question/update", questionHandler.UpdateQuestionHandler)
 	adminAPI.POST("/question/list/page", questionHandler.ListQuestionHandler)
 	adminAPI.POST("/question/delete/batch", questionHandler.BatchDeleteQuestionsHandler)
+	adminAPI.POST("/questionBankQuestion/add", questionBankQuestionHandler.AddQuestionBankQuestionHandler)
+	adminAPI.POST("/questionBankQuestion/delete", questionBankQuestionHandler.DeleteQuestionBankQuestionHandler)
+	adminAPI.POST("/questionBankQuestion/update", questionBankQuestionHandler.UpdateQuestionBankQuestionHandler)
+	adminAPI.POST("/questionBankQuestion/list/page", questionBankQuestionHandler.ListQuestionBankQuestionHandler)
+	adminAPI.POST("/questionBankQuestion/remove", questionBankQuestionHandler.RemoveQuestionBankQuestionHandler)
 	adminAPI.POST("/questionBankQuestion/add/batch", questionBankQuestionHandler.BatchAddQuestionsToBankHandler)
 	adminAPI.POST("/questionBankQuestion/remove/batch", questionBankQuestionHandler.BatchRemoveQuestionsFromBankHandler)
 }

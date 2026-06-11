@@ -39,6 +39,7 @@ export default function BasicLayout({ children }: Props) {
   const userLogout = async () => {
     try {
       await userLogoutUsingPost();
+      localStorage.removeItem("token");
       message.success("已退出登录");
       dispatch(setLoginUser(DEFAULT_USER));
       router.push("/user/login");

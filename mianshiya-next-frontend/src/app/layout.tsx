@@ -7,6 +7,7 @@ import store, { AppDispatch } from "@/stores";
 import { getLoginUserUsingGet } from "@/api/userController";
 import AccessLayout from "@/access/AccessLayout";
 import { setLoginUser } from "@/stores/loginUser";
+import { DEFAULT_USER } from "@/constants/user";
 import "./globals.css";
 
 /**
@@ -22,28 +23,28 @@ const InitLayout: React.FC<
   const dispatch = useDispatch<AppDispatch>();
   // 初始化全局用户状态
   const doInitLoginUser = useCallback(async () => {
-    const res = await getLoginUserUsingGet();
-    if (res.data) {
-      // 更新全局用户状态
-      dispatch(setLoginUser(res.data));
-    } else {
-      // 仅用于测试
-      // setTimeout(() => {
-      //   const testUser = {
-      //     userName: "测试登录",
-      //     id: 1,
-      //     userAvatar: "https://www.code-nav.cn/logo.png",
-      //     userRole: ACCESS_ENUM.ADMIN
-      //   };
-      //   dispatch(setLoginUser(testUser));
-      // }, 3000);
+    if (!localStorage.getItem("token")) {
+      dispatch(setLoginUser(DEFAULT_USER));
+      return;
     }
-  }, []);
+    try {
+      const res = await getLoginUserUsingGet();
+      if (res.data) {
+        // 更新全局用户状态
+        dispatch(setLoginUser(res.data));
+      } else {
+        dispatch(setLoginUser(DEFAULT_USER));
+      }
+    } catch {
+      localStorage.removeItem("token");
+      dispatch(setLoginUser(DEFAULT_USER));
+    }
+  }, [dispatch]);
 
   // 只执行一次
   useEffect(() => {
     doInitLoginUser();
-  }, []);
+  }, [doInitLoginUser]);
   return children;
 };
 

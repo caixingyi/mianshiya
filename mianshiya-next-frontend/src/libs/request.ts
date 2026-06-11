@@ -14,6 +14,13 @@ const myAxios = axios.create({
 myAxios.interceptors.request.use(
   function (config) {
     // 请求执行前执行
+    if (typeof window !== "undefined") {
+      const token = window.localStorage.getItem("token");
+      if (token) {
+        config.headers = config.headers ?? {};
+        (config.headers as any).Authorization = `Bearer ${token}`;
+      }
+    }
     return config;
   },
   function (error) {
@@ -30,9 +37,14 @@ myAxios.interceptors.response.use(
     const { data } = response;
     // 未登录
     if (data.code === 40100) {
+      if (typeof window !== "undefined") {
+        window.localStorage.removeItem("token");
+      }
       // 不是获取用户信息接口，或者不是登录页面，则跳转到登录页面
+      const responseUrl = response.request?.responseURL ?? "";
       if (
-        !response.request.responseURL.includes("user/get/login") &&
+        typeof window !== "undefined" &&
+        !responseUrl.includes("user/get/login") &&
         !window.location.pathname.includes("/user/login")
       ) {
         window.location.href = `/user/login?redirect=${window.location.href}`;
