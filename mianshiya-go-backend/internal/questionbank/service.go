@@ -97,3 +97,71 @@ func (s *Service) ListQuestionBanks(req *ListQuestionBankRequest) (*response.Pag
 		PageSize: req.PageSize,
 	}, nil
 }
+
+// DeleteQuestionBank 删除题库
+func (s *Service) DeleteQuestionBank(id int64) error {
+	// 1. 校验参数
+	if id <= 0 {
+		return errors.New("参数错误")
+	}
+	// 2. 调用 Repository 删除题库
+	return s.repo.Delete(id)
+}
+
+// UpdateQuestionBank 更新题库
+func (s *Service) UpdateQuestionBank(req *UpdateQuestionBankRequest) error {
+	if req == nil || req.ID <= 0 {
+		return errors.New("参数错误")
+	}
+
+	updates := make(map[string]any)
+
+	if req.Title != "" {
+		updates["title"] = req.Title
+	}
+	if req.Description != "" {
+		updates["description"] = req.Description
+	}
+	if req.Picture != "" {
+		updates["picture"] = req.Picture
+	}
+
+	if len(updates) == 0 {
+		return errors.New("没有要更新的字段")
+	}
+
+	return s.repo.UpdateByID(req.ID, updates)
+}
+
+// ListQuestionBankPage 获取题库列表（分页）
+func (s *Service) ListQuestionBankPage(req *ListQuestionBankRequest) (*response.PageResponse[QuestionBank], error) {
+	if req == nil {
+		return nil, errors.New("请求参数不能为空")
+	}
+	if req.Current <= 0 {
+		req.Current = 1
+	}
+	if req.PageSize <= 0 {
+		req.PageSize = 10
+	}
+	if req.PageSize > 100 {
+		return nil, errors.New("每页记录数不能超过100")
+	}
+
+	questionBanks, total, err := s.repo.List(req)
+	if err != nil {
+		return nil, err
+	}
+
+	records := make([]QuestionBank, 0, len(questionBanks))
+	for _, qb := range questionBanks {
+		records = append(records, *qb)
+	}
+
+	return &response.PageResponse[QuestionBank]{
+		Records:  records,
+		Total:    total,
+		Current:  req.Current,
+		PageSize: req.PageSize,
+	}, nil
+}

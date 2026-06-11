@@ -24,3 +24,16 @@ type ListQuestionBankRequest struct {
 	Picture     string `json:"picture"`
 	UserID      int64  `json:"userId"`
 }
+
+// DeleteQuestionBankRequest 定义了删除题库的请求结构体
+type DeleteQuestionBankRequest struct {
+	ID int64 `json:"id"`
+}
+
+// UpdateQuestionBankRequest 定义了更新题库的请求结构体
+type UpdateQuestionBankRequest struct {
+	ID          int64  `json:"id"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	Picture     string `json:"picture"`
+}

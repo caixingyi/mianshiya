@@ -37,7 +37,15 @@ func (r *Repository) List(req *ListQuestionBankRequest) ([]*QuestionBank, int64,
 	if req.ID != 0 {
 		query = query.Where("id = ?", req.ID)
 	}
-
+	if req.Title != "" {
+		query = query.Where("title LIKE ?", "%"+req.Title+"%")
+	}
+	if req.Description != "" {
+		query = query.Where("description LIKE ?", "%"+req.Description+"%")
+	}
+	if req.NotID > 0 {
+		query = query.Where("id <> ?", req.NotID)
+	}
 	if req.SearchText != "" {
 		like := "%" + req.SearchText + "%"
 		query = query.Where("title LIKE ? OR description LIKE ?", like, like)
@@ -58,4 +66,34 @@ func (r *Repository) List(req *ListQuestionBankRequest) ([]*QuestionBank, int64,
 	}
 
 	return result, total, nil
+}
+
+// Delete 删除题库
+func (r *Repository) Delete(id int64) error {
+	result := r.db.Model(&QuestionBank{}).
+		Where("id = ? AND is_delete = 0", id).
+		Update("is_delete", 1)
+
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
+}
+
+// UpdateByID 根据 ID 更新题库
+func (r *Repository) UpdateByID(id int64, updates map[string]any) error {
+	result := r.db.Model(&QuestionBank{}).
+		Where("id = ? AND is_delete = 0", id).
+		Updates(updates)
+
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
 }
