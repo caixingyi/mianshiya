@@ -128,3 +128,41 @@ func (h *Handler) UpdateQuestionHandler(c *gin.Context) {
 
 	c.JSON(200, response.Success(true))
 }
+
+// ListQuestionHandler 处理列出题目的请求
+func (h *Handler) ListQuestionHandler(c *gin.Context) {
+	var req ListQuestionRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(200, response.ErrorWithMessage(errorcode.ParamsError, "Invalid request parameters"))
+		return
+	}
+
+	page, err := h.service.ListQuestionPage(&req)
+	if err != nil {
+		c.JSON(200, response.ErrorWithMessage(errorcode.ParamsError, err.Error()))
+		return
+	}
+
+	c.JSON(200, response.Success(page))
+}
+
+// BatchDeleteQuestionsHandler 处理批量删除题目的请求
+func (h *Handler) BatchDeleteQuestionsHandler(c *gin.Context) {
+	var req BatchDeleteQuestionRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(200, response.ErrorWithMessage(errorcode.ParamsError, "Invalid request parameters"))
+		return
+	}
+
+	err := h.service.BatchDeleteQuestions(&req)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		c.JSON(200, response.Error(errorcode.NotFoundError))
+		return
+	}
+	if err != nil {
+		c.JSON(200, response.ErrorWithMessage(errorcode.ParamsError, err.Error()))
+		return
+	}
+
+	c.JSON(200, response.Success(true))
+}

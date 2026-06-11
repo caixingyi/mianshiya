@@ -159,3 +159,48 @@ func (s *Service) UpdateQuestion(req *UpdateQuestionRequest) error {
 
 	return s.repo.UpdateByID(req.ID, updates)
 }
+
+// ListQuestionPage 获取题目分页列表
+func (s *Service) ListQuestionPage(req *ListQuestionRequest) (*response.PageResponse[Question], error) {
+	// 参数校验
+	if req == nil {
+		return nil, errors.New("请求参数不能为空")
+	}
+	if req.Current <= 0 {
+		req.Current = 1
+	}
+	if req.PageSize <= 0 {
+		req.PageSize = 10
+	}
+	if req.PageSize > 20 {
+		return nil, errors.New("参数错误")
+	}
+	// 查询题目列表
+	records, total, err := s.repo.List(req)
+	if err != nil {
+		return nil, err
+	}
+	questionList := make([]Question, 0, len(records))
+	for _, record := range records {
+		questionList = append(questionList, *record)
+	}
+	return &response.PageResponse[Question]{
+		Current:  req.Current,
+		PageSize: req.PageSize,
+		Total:    total,
+		Records:  questionList,
+	}, nil
+}
+
+// BatchDeleteQuestions 批量删除题目
+func (s *Service) BatchDeleteQuestions(req *BatchDeleteQuestionRequest) error {
+	if req == nil || len(req.QuestionIDList) == 0 {
+		return errors.New("参数错误")
+	}
+	for _, id := range req.QuestionIDList {
+		if id <= 0 {
+			return errors.New("参数错误")
+		}
+	}
+	return s.repo.DeleteBatchByIDs(req.QuestionIDList)
+}

@@ -41,3 +41,8 @@ type UpdateQuestionRequest struct {
 	Tags    []string `json:"tags"`
 	Answer  string   `json:"answer"`
 }
+
+// 批量删除题目的请求参数
+type BatchDeleteQuestionRequest struct {
+	QuestionIDList []int64 `json:"questionIdList"`
+}

@@ -68,6 +68,8 @@ func RegisterRouter(r *gin.Engine, database *gorm.DB, tokenStore auth.TokenStore
 	adminAPI.POST("/question/add", questionHandler.AddQuestionHandler)
 	adminAPI.POST("/question/delete", questionHandler.DeleteQuestionHandler)
 	adminAPI.POST("/question/update", questionHandler.UpdateQuestionHandler)
+	adminAPI.POST("/question/list/page", questionHandler.ListQuestionHandler)
+	adminAPI.POST("/question/delete/batch", questionHandler.BatchDeleteQuestionsHandler)
 	adminAPI.POST("/questionBankQuestion/add/batch", questionBankQuestionHandler.BatchAddQuestionsToBankHandler)
 	adminAPI.POST("/questionBankQuestion/remove/batch", questionBankQuestionHandler.BatchRemoveQuestionsFromBankHandler)
 }
