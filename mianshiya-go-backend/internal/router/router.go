@@ -6,6 +6,7 @@ import (
 
 	"mianshiya-go-backend/internal/auth"
 	"mianshiya-go-backend/internal/handler"
+	"mianshiya-go-backend/internal/post"
 	"mianshiya-go-backend/internal/question"
 	"mianshiya-go-backend/internal/questionbank"
 	"mianshiya-go-backend/internal/questionbankquestion"
@@ -37,6 +38,9 @@ func RegisterRouter(r *gin.Engine, database *gorm.DB, tokenStore auth.TokenStore
 		questionBankRepo,
 	)
 	questionBankQuestionHandler := questionbankquestion.NewHandler(questionBankQuestionService)
+	postRepo := post.NewRepository(database)
+	postService := post.NewService(postRepo, userService)
+	postHandler := post.NewHandler(postService)
 
 	// 公开接口
 	api.POST("/user/register", userHandler.RegisterHandler)
@@ -49,6 +53,9 @@ func RegisterRouter(r *gin.Engine, database *gorm.DB, tokenStore auth.TokenStore
 	api.POST("/question/search/page/vo", questionHandler.ListQuestionVOHandler)
 	api.GET("/questionBankQuestion/get/vo", questionBankQuestionHandler.GetQuestionBankQuestionVOHandler)
 	api.POST("/questionBankQuestion/list/page/vo", questionBankQuestionHandler.ListQuestionBankQuestionVOHandler)
+	api.GET("/post/get/vo", postHandler.GetPostVOHandler)
+	api.POST("/post/list/page/vo", postHandler.ListPostVOHandler)
+
 	// 需要认证的接口
 	authAPI := api.Group("")
 	authAPI.Use(auth.AuthMiddleware(tokenStore))
@@ -56,6 +63,11 @@ func RegisterRouter(r *gin.Engine, database *gorm.DB, tokenStore auth.TokenStore
 	authAPI.POST("/user/logout", userHandler.LogoutHandler)
 	authAPI.POST("/user/update/my", userHandler.UpdateMyHandler)
 	authAPI.POST("/questionBankQuestion/my/list/page/vo", questionBankQuestionHandler.ListMyQuestionBankQuestionVOHandler)
+	authAPI.POST("/post/add", postHandler.AddPostHandler)
+	authAPI.POST("/post/delete", postHandler.DeletePostHandler)
+	authAPI.POST("/post/edit", postHandler.EditPostHandler)
+	authAPI.POST("/post/my/list/page/vo", postHandler.ListMyPostsVOHandler)
+
 	// 管理员接口
 	adminAPI := api.Group("")
 	adminAPI.Use(auth.AuthMiddleware(tokenStore), user.AdminMiddleware(userService))
@@ -81,4 +93,6 @@ func RegisterRouter(r *gin.Engine, database *gorm.DB, tokenStore auth.TokenStore
 	adminAPI.POST("/questionBankQuestion/remove", questionBankQuestionHandler.RemoveQuestionBankQuestionHandler)
 	adminAPI.POST("/questionBankQuestion/add/batch", questionBankQuestionHandler.BatchAddQuestionsToBankHandler)
 	adminAPI.POST("/questionBankQuestion/remove/batch", questionBankQuestionHandler.BatchRemoveQuestionsFromBankHandler)
+	adminAPI.POST("/post/update", postHandler.UpdatePostHandler)
+	adminAPI.POST("/post/list/page", postHandler.ListPostPageHandler)
 }
