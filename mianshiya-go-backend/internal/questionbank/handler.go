@@ -57,7 +57,7 @@ func (h *Handler) GetQuestionBankVOHandler(c *gin.Context) {
 		return
 	}
 	// 2. 调用服务层获取题库详情
-	questionBank, err := h.service.GetQuestionBankResponseByID(int64(req.ID))
+	questionBank, err := h.service.GetQuestionBankResponseByID(&req)
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		c.JSON(200, response.Error(errorcode.NotFoundError))
 		return

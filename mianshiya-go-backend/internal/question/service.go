@@ -95,7 +95,7 @@ func (s *Service) ListQuestions(req *ListQuestionRequest) (*response.PageRespons
 	if req.PageSize <= 0 {
 		req.PageSize = 10
 	}
-	if req.PageSize > 20 {
+	if req.PageSize > 200 {
 		return nil, errors.New("参数错误")
 	}
 	// 查询题目列表

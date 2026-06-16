@@ -1,6 +1,8 @@
 package questionbank
 
-import "gorm.io/gorm"
+import (
+	"gorm.io/gorm"
+)
 
 // Repository 定义了题库相关的数据访问层
 type Repository struct {

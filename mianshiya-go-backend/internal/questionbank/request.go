@@ -9,7 +9,10 @@ type AddQuestionBankRequest struct {
 
 // GetQuestionBankRequest 定义了获取题库详情的请求结构体
 type GetQuestionBankRequest struct {
-	ID int `form:"id" binding:"required"`
+	ID                    int64 `form:"id" binding:"required"`
+	NeedQueryQuestionList bool  `form:"needQueryQuestionList"`
+	Current               int64 `form:"current"`
+	PageSize              int64 `form:"pageSize"`
 }
 
 // ListQuestionBankRequest 定义了获取题库列表的请求结构体

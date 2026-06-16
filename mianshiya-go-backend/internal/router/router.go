@@ -22,13 +22,13 @@ func RegisterRouter(r *gin.Engine, database *gorm.DB, tokenStore auth.TokenStore
 	userService := user.NewService(userRepo)
 	userHandler := user.NewHandler(userService, tokenStore)
 
-	questionBankRepo := questionbank.NewRepository(database)
-	questionBankService := questionbank.NewService(questionBankRepo)
-	questionBankHandler := questionbank.NewHandler(questionBankService)
-
 	questionRepo := question.NewRepository(database)
 	questionService := question.NewService(questionRepo)
 	questionHandler := question.NewHandler(questionService)
+
+	questionBankRepo := questionbank.NewRepository(database)
+	questionBankService := questionbank.NewService(questionBankRepo, questionService)
+	questionBankHandler := questionbank.NewHandler(questionBankService)
 
 	questionBankQuestionRepo := questionbankquestion.NewRepository(database)
 	questionBankQuestionService := questionbankquestion.NewService(

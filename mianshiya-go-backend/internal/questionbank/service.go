@@ -2,17 +2,19 @@ package questionbank
 
 import (
 	"errors"
+	"mianshiya-go-backend/internal/question"
 	"mianshiya-go-backend/internal/response"
 )
 
 // Service 定义了题库服务的结构体
 type Service struct {
-	repo *Repository
+	repo        *Repository
+	questionSvc *question.Service
 }
 
 // NewService 创建一个新的 Service 实例
-func NewService(repo *Repository) *Service {
-	return &Service{repo: repo}
+func NewService(repo *Repository, questionSvc *question.Service) *Service {
+	return &Service{repo: repo, questionSvc: questionSvc}
 }
 
 func (s *Service) toQuestionBankResponse(qb *QuestionBank) *QuestionBankResponse {
@@ -51,19 +53,39 @@ func (s *Service) AddQuestionBank(req *AddQuestionBankRequest, userID int64) (in
 	return s.repo.Create(questionBank)
 }
 
-// GetQuestionBankResponseByID 根据 ID 获取题库详情
-func (s *Service) GetQuestionBankResponseByID(id int64) (*QuestionBankResponse, error) {
+func (s *Service) GetQuestionBankResponseByID(req *GetQuestionBankRequest) (*QuestionBankResponse, error) {
 	// 1. 校验参数
-	if id <= 0 {
+	if req.ID <= 0 {
 		return nil, errors.New("题库ID无效")
 	}
 	// 2. 调用 Repository 获取题库详情
-	questionBank, err := s.repo.FindByID(id)
+	questionBank, err := s.repo.FindByID(req.ID)
 	if err != nil {
 		return nil, err
 	}
-	// 3. 转换为响应对象并返回
-	return s.toQuestionBankResponse(questionBank), nil
+	// 3. 转换为响应对象
+	resp := s.toQuestionBankResponse(questionBank)
+	// 4. 如果需要查询题目列表，则通过 question.Service 填充题目分页数据
+	if req.NeedQueryQuestionList {
+		current := req.Current
+		if current <= 0 {
+			current = 1
+		}
+		pageSize := req.PageSize
+		if pageSize <= 0 {
+			pageSize = 10
+		}
+		questionPage, err := s.questionSvc.ListQuestions(&question.ListQuestionRequest{
+			QuestionBankID: req.ID,
+			Current:        current,
+			PageSize:       pageSize,
+		})
+		if err != nil {
+			return nil, err
+		}
+		resp.QuestionPage = questionPage
+	}
+	return resp, nil
 }
 
 // ListQuestionBanks 获取题库列表
