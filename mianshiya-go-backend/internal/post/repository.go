@@ -119,3 +119,24 @@ func (r *Repository) DeleteBatchByIDs(ids []int64) error {
 	}
 	return nil
 }
+
+// IncrementThumbNum 原子更新帖子的点赞数
+func (r *Repository) IncrementThumbNum(id int64, delta int) error {
+	query := r.db.Model(&Post{}).Where("id = ? AND is_delete = 0", id)
+	if delta < 0 {
+		query = query.Where("thumb_num > 0")
+	}
+	result := query.UpdateColumn("thumb_num", gorm.Expr("thumb_num + ?", delta))
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
+}
+
+// WithTx 返回使用事务的 Repository
+func (r *Repository) WithTx(tx *gorm.DB) *Repository {
+	return &Repository{db: tx}
+}
