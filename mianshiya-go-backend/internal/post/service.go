@@ -32,6 +32,8 @@ func (s *Service) toPostResponse(post *Post) (*PostResponse, error) {
 		Content:   post.Content,
 		UserID:    post.UserID,
 		TagList:   tagList,
+		ThumbNum:  post.ThumbNum,
+		FavourNum: post.FavourNum,
 		CreatedAt: post.CreatedAt,
 		UpdatedAt: post.UpdatedAt,
 	}, nil
