@@ -11,6 +11,29 @@ import (
 const ContextUserIDKey = "userID"
 const ContextTokenKey = "token"
 
+// OptionalAuthMiddleware 可选认证中间件：有 token 就解析用户 ID，没有也不拦截
+func OptionalAuthMiddleware(tokenStore TokenStore) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
+			c.Next()
+			return
+		}
+		token := strings.TrimPrefix(authHeader, "Bearer ")
+		if token == "" {
+			c.Next()
+			return
+		}
+		userID, exists, err := tokenStore.GetUserID(c.Request.Context(), token)
+		if err != nil || !exists {
+			c.Next()
+			return
+		}
+		c.Set(ContextUserIDKey, userID)
+		c.Next()
+	}
+}
+
 func AuthMiddleware(tokenStore TokenStore) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// 从请求头中获取 token

@@ -63,9 +63,9 @@ func RegisterRouter(r *gin.Engine, database *gorm.DB, tokenStore auth.TokenStore
 	api.POST("/question/search/page/vo", questionHandler.ListQuestionVOHandler)
 	api.GET("/questionBankQuestion/get/vo", questionBankQuestionHandler.GetQuestionBankQuestionVOHandler)
 	api.POST("/questionBankQuestion/list/page/vo", questionBankQuestionHandler.ListQuestionBankQuestionVOHandler)
-	api.GET("/post/get/vo", postHandler.GetPostVOHandler)
-	api.POST("/post/list/page/vo", postHandler.ListPostVOHandler)
-	api.POST("/postFavour/list/page", postFavourHandler.ListFavourPostHandler)
+	api.GET("/post/get/vo", auth.OptionalAuthMiddleware(tokenStore), postHandler.GetPostVOHandler)
+	api.POST("/post/list/page/vo", auth.OptionalAuthMiddleware(tokenStore), postHandler.ListPostVOHandler)
+	api.POST("/postFavour/list/page", auth.OptionalAuthMiddleware(tokenStore), postFavourHandler.ListFavourPostHandler)
 
 	// 需要认证的接口
 	authAPI := api.Group("")

@@ -20,6 +20,19 @@ func NewHandler(service *Service) *Handler {
 	return &Handler{service: service}
 }
 
+// getLoginUserID 从上下文中获取登录用户 ID，未登录返回 0
+func getLoginUserID(c *gin.Context) int64 {
+	value, exists := c.Get(auth.ContextUserIDKey)
+	if !exists {
+		return 0
+	}
+	userID, ok := value.(int64)
+	if !ok {
+		return 0
+	}
+	return userID
+}
+
 // AddPostHandler 处理添加帖子的请求
 func (h *Handler) AddPostHandler(c *gin.Context) {
 	var req AddPostRequest
@@ -86,7 +99,7 @@ func (h *Handler) ListPostVOHandler(c *gin.Context) {
 		return
 	}
 
-	resp, err := h.service.ListPosts(&req)
+	resp, err := h.service.ListPosts(&req, getLoginUserID(c))
 	if err != nil {
 		c.JSON(200, response.ErrorWithMessage(errorcode.ParamsError, err.Error()))
 		return
@@ -103,7 +116,7 @@ func (h *Handler) GetPostVOHandler(c *gin.Context) {
 		return
 	}
 
-	post, err := h.service.GetPostByID(req.ID)
+	post, err := h.service.GetPostByID(req.ID, getLoginUserID(c))
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		c.JSON(200, response.Error(errorcode.NotFoundError))
 		return

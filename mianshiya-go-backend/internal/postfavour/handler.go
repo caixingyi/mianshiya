@@ -76,13 +76,26 @@ func (h *Handler) ListMyFavourPostHandler(c *gin.Context) {
 	}
 
 	req.FavourUserID = userID
-	result, err := h.postSvc.ListPosts(&req)
+	result, err := h.postSvc.ListPosts(&req, userID)
 	if err != nil {
 		c.JSON(200, response.ErrorWithMessage(errorcode.SystemError, err.Error()))
 		return
 	}
 
 	c.JSON(200, response.Success(result))
+}
+
+// getLoginUserID 从上下文中获取登录用户 ID，未登录返回 0
+func getLoginUserID(c *gin.Context) int64 {
+	value, exists := c.Get(auth.ContextUserIDKey)
+	if !exists {
+		return 0
+	}
+	userID, ok := value.(int64)
+	if !ok {
+		return 0
+	}
+	return userID
 }
 
 // ListFavourPostHandler 获取指定用户收藏的帖子列表
@@ -94,7 +107,7 @@ func (h *Handler) ListFavourPostHandler(c *gin.Context) {
 	}
 
 	req.ListPostsRequest.FavourUserID = req.UserID
-	result, err := h.postSvc.ListPosts(&req.ListPostsRequest)
+	result, err := h.postSvc.ListPosts(&req.ListPostsRequest, getLoginUserID(c))
 	if err != nil {
 		c.JSON(200, response.ErrorWithMessage(errorcode.SystemError, err.Error()))
 		return

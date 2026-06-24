@@ -159,3 +159,17 @@ func (r *Repository) IncrementFavourNum(id int64, delta int) error {
 func (r *Repository) WithTx(tx *gorm.DB) *Repository {
 	return &Repository{db: tx}
 }
+
+// HasThumb 查询用户是否已点赞该帖子
+func (r *Repository) HasThumb(postID, userID int64) (bool, error) {
+	var count int64
+	err := r.db.Table("post_thumbs").Where("post_id = ? AND user_id = ?", postID, userID).Count(&count).Error
+	return count > 0, err
+}
+
+// HasFavour 查询用户是否已收藏该帖子
+func (r *Repository) HasFavour(postID, userID int64) (bool, error) {
+	var count int64
+	err := r.db.Table("post_favours").Where("post_id = ? AND user_id = ?", postID, userID).Count(&count).Error
+	return count > 0, err
+}

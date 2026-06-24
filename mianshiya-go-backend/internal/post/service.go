@@ -19,11 +19,21 @@ func NewService(r *Repository, userSvc *user.Service) *Service {
 }
 
 // 转换 Post 到 PostResponse
-func (s *Service) toPostResponse(post *Post) (*PostResponse, error) {
+func (s *Service) toPostResponse(post *Post, loginUserID int64) (*PostResponse, error) {
 	tagList := make([]string, 0)
 	if post.Tags != "" {
 		if err := json.Unmarshal([]byte(post.Tags), &tagList); err != nil {
 			return nil, err
+		}
+	}
+	hasThumb := false
+	hasFavour := false
+	if loginUserID > 0 {
+		if ht, err := s.repo.HasThumb(post.ID, loginUserID); err == nil {
+			hasThumb = ht
+		}
+		if hf, err := s.repo.HasFavour(post.ID, loginUserID); err == nil {
+			hasFavour = hf
 		}
 	}
 	return &PostResponse{
@@ -34,6 +44,8 @@ func (s *Service) toPostResponse(post *Post) (*PostResponse, error) {
 		TagList:   tagList,
 		ThumbNum:  post.ThumbNum,
 		FavourNum: post.FavourNum,
+		HasThumb:  hasThumb,
+		HasFavour: hasFavour,
 		CreatedAt: post.CreatedAt,
 		UpdatedAt: post.UpdatedAt,
 	}, nil
@@ -105,13 +117,13 @@ func (s *Service) DeletePost(req *DeletePostRequest, userID int64) error {
 	return s.repo.DeleteByID(req.ID)
 }
 
-// GetPostByID 获取帖子详情
-func (s *Service) GetPostByID(id int64) (*PostResponse, error) {
+// GetPostByID 获取帖子详情，loginUserID 为 0 表示未登录（不查点赞/收藏状态）
+func (s *Service) GetPostByID(id int64, loginUserID int64) (*PostResponse, error) {
 	post, err := s.repo.FindByID(id)
 	if err != nil {
 		return nil, err
 	}
-	resp, err := s.toPostResponse(post)
+	resp, err := s.toPostResponse(post, loginUserID)
 	if err != nil {
 		return nil, err
 	}
@@ -123,8 +135,8 @@ func (s *Service) GetPostByID(id int64) (*PostResponse, error) {
 	return resp, nil
 }
 
-// ListPosts 分页查询帖子列表（返回 VO）
-func (s *Service) ListPosts(req *ListPostsRequest) (*response.PageResponse[PostResponse], error) {
+// ListPosts 分页查询帖子列表（返回 VO），loginUserID 为 0 表示未登录
+func (s *Service) ListPosts(req *ListPostsRequest, loginUserID int64) (*response.PageResponse[PostResponse], error) {
 	if req == nil {
 		return nil, errors.New("请求参数不能为空")
 	}
@@ -143,7 +155,7 @@ func (s *Service) ListPosts(req *ListPostsRequest) (*response.PageResponse[PostR
 	}
 	responses := make([]PostResponse, 0, len(posts))
 	for _, post := range posts {
-		resp, err := s.toPostResponse(post)
+		resp, err := s.toPostResponse(post, loginUserID)
 		if err != nil {
 			return nil, err
 		}
@@ -200,7 +212,7 @@ func (s *Service) ListMyPostsVO(req *ListPostsRequest, userID int64) (*response.
 		return nil, errors.New("无效的用户ID")
 	}
 	req.UserID = userID
-	return s.ListPosts(req)
+	return s.ListPosts(req, userID)
 }
 
 // UpdatePost 更新帖子（管理员接口）
