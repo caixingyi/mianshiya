@@ -59,6 +59,9 @@ func (r *Repository) List(req *ListPostsRequest) ([]*Post, int64, error) {
 	if req.UserID > 0 {
 		query = query.Where("user_id = ?", req.UserID)
 	}
+	if req.FavourUserID > 0 {
+		query = query.Where("id IN (SELECT post_id FROM post_favours WHERE user_id = ?)", req.FavourUserID)
+	}
 	for _, tag := range req.Tags {
 		if tag != "" {
 			query = query.Where("tags LIKE ?", "%"+tag+"%")
@@ -127,6 +130,22 @@ func (r *Repository) IncrementThumbNum(id int64, delta int) error {
 		query = query.Where("thumb_num > 0")
 	}
 	result := query.UpdateColumn("thumb_num", gorm.Expr("thumb_num + ?", delta))
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
+}
+
+// IncrementFavourNum 原子更新帖子的收藏数
+func (r *Repository) IncrementFavourNum(id int64, delta int) error {
+	query := r.db.Model(&Post{}).Where("id = ? AND is_delete = 0", id)
+	if delta < 0 {
+		query = query.Where("favour_num > 0")
+	}
+	result := query.UpdateColumn("favour_num", gorm.Expr("favour_num + ?", delta))
 	if result.Error != nil {
 		return result.Error
 	}

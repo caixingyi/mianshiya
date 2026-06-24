@@ -7,6 +7,7 @@ import (
 	"mianshiya-go-backend/internal/auth"
 	"mianshiya-go-backend/internal/handler"
 	"mianshiya-go-backend/internal/post"
+	"mianshiya-go-backend/internal/postfavour"
 	"mianshiya-go-backend/internal/postthumb"
 	"mianshiya-go-backend/internal/question"
 	"mianshiya-go-backend/internal/questionbank"
@@ -47,6 +48,10 @@ func RegisterRouter(r *gin.Engine, database *gorm.DB, tokenStore auth.TokenStore
 	postThumbService := postthumb.NewService(postThumbRepo, postRepo)
 	postThumbHandler := postthumb.NewHandler(postThumbService)
 
+	postFavourRepo := postfavour.NewRepository(database)
+	postFavourService := postfavour.NewService(postFavourRepo, postRepo)
+	postFavourHandler := postfavour.NewHandler(postFavourService, postService)
+
 	// 公开接口
 	api.POST("/user/register", userHandler.RegisterHandler)
 	api.POST("/user/login", userHandler.LoginHandler)
@@ -60,6 +65,7 @@ func RegisterRouter(r *gin.Engine, database *gorm.DB, tokenStore auth.TokenStore
 	api.POST("/questionBankQuestion/list/page/vo", questionBankQuestionHandler.ListQuestionBankQuestionVOHandler)
 	api.GET("/post/get/vo", postHandler.GetPostVOHandler)
 	api.POST("/post/list/page/vo", postHandler.ListPostVOHandler)
+	api.POST("/postFavour/list/page", postFavourHandler.ListFavourPostHandler)
 
 	// 需要认证的接口
 	authAPI := api.Group("")
@@ -73,6 +79,8 @@ func RegisterRouter(r *gin.Engine, database *gorm.DB, tokenStore auth.TokenStore
 	authAPI.POST("/post/edit", postHandler.EditPostHandler)
 	authAPI.POST("/post/my/list/page/vo", postHandler.ListMyPostsVOHandler)
 	authAPI.POST("/postThumb/do", postThumbHandler.DoPostThumbHandler)
+	authAPI.POST("/postFavour/do", postFavourHandler.DoPostFavourHandler)
+	authAPI.POST("/postFavour/my/list/page", postFavourHandler.ListMyFavourPostHandler)
 
 	// 管理员接口
 	adminAPI := api.Group("")
