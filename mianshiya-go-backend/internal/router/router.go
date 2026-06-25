@@ -5,6 +5,7 @@ import (
 	"gorm.io/gorm"
 
 	"mianshiya-go-backend/internal/auth"
+	"mianshiya-go-backend/internal/file"
 	"mianshiya-go-backend/internal/handler"
 	"mianshiya-go-backend/internal/post"
 	"mianshiya-go-backend/internal/postfavour"
@@ -16,6 +17,8 @@ import (
 )
 
 func RegisterRouter(r *gin.Engine, database *gorm.DB, tokenStore auth.TokenStore) {
+	r.Static("/api/static", "./uploads")
+
 	api := r.Group("/api")
 
 	api.GET("/health", handler.HealthHandler)
@@ -52,6 +55,10 @@ func RegisterRouter(r *gin.Engine, database *gorm.DB, tokenStore auth.TokenStore
 	postFavourService := postfavour.NewService(postFavourRepo, postRepo)
 	postFavourHandler := postfavour.NewHandler(postFavourService, postService)
 
+	fileStorage := file.NewLocalStorage("uploads", "/api/static")
+	fileService := file.NewService(fileStorage)
+	fileHandler := file.NewHandler(fileService)
+
 	// 公开接口
 	api.POST("/user/register", userHandler.RegisterHandler)
 	api.POST("/user/login", userHandler.LoginHandler)
@@ -87,6 +94,7 @@ func RegisterRouter(r *gin.Engine, database *gorm.DB, tokenStore auth.TokenStore
 	authAPI.POST("/postThumb/do", postThumbHandler.DoPostThumbHandler)
 	authAPI.POST("/postFavour/do", postFavourHandler.DoPostFavourHandler)
 	authAPI.POST("/postFavour/my/list/page", postFavourHandler.ListMyFavourPostHandler)
+	authAPI.POST("/file/upload", fileHandler.UploadFileHandler)
 
 	// 管理员接口
 	adminAPI := api.Group("")
