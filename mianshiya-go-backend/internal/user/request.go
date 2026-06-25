@@ -62,3 +62,8 @@ type ListUserRequest struct {
 type GetUserRequest struct {
 	ID int64 `form:"id"`
 }
+
+// GetUserSignInRequest 获取用户签到记录请求参数
+type GetUserSignInRequest struct {
+	Year int `form:"year"`
+}

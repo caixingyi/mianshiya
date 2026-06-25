@@ -2,6 +2,7 @@ package router
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 
 	"mianshiya-go-backend/internal/auth"
@@ -16,7 +17,7 @@ import (
 	"mianshiya-go-backend/internal/user"
 )
 
-func RegisterRouter(r *gin.Engine, database *gorm.DB, tokenStore auth.TokenStore) {
+func RegisterRouter(r *gin.Engine, database *gorm.DB, rdb *redis.Client, tokenStore auth.TokenStore) {
 	r.Static("/api/static", "./uploads")
 
 	api := r.Group("/api")
@@ -25,7 +26,7 @@ func RegisterRouter(r *gin.Engine, database *gorm.DB, tokenStore auth.TokenStore
 	api.GET("/error-demo", handler.ErrorDemoHandler)
 
 	userRepo := user.NewRepository(database)
-	userService := user.NewService(userRepo)
+	userService := user.NewService(userRepo, rdb)
 	userHandler := user.NewHandler(userService, tokenStore)
 
 	questionRepo := question.NewRepository(database)
@@ -82,11 +83,15 @@ func RegisterRouter(r *gin.Engine, database *gorm.DB, tokenStore auth.TokenStore
 	authAPI.POST("/user/logout", userHandler.LogoutHandler)
 	authAPI.POST("/user/update/my", userHandler.UpdateMyHandler)
 	authAPI.POST("/user/edit", userHandler.EditUserHandler)
+	authAPI.POST("/user/add/sign_in", userHandler.AddUserSignInHandler)
+	authAPI.GET("/user/get/sign_in", userHandler.GetUserSignInHandler)
+
 	authAPI.POST("/questionBank/my/list/page/vo", questionBankHandler.ListMyQuestionBankVOHandler)
 	authAPI.POST("/questionBank/edit", questionBankHandler.EditQuestionBankHandler)
 	authAPI.POST("/question/my/list/page/vo", questionHandler.ListMyQuestionVOHandler)
 	authAPI.POST("/question/edit", questionHandler.EditQuestionHandler)
 	authAPI.POST("/questionBankQuestion/my/list/page/vo", questionBankQuestionHandler.ListMyQuestionBankQuestionVOHandler)
+
 	authAPI.POST("/post/add", postHandler.AddPostHandler)
 	authAPI.POST("/post/delete", postHandler.DeletePostHandler)
 	authAPI.POST("/post/edit", postHandler.EditPostHandler)
@@ -94,6 +99,7 @@ func RegisterRouter(r *gin.Engine, database *gorm.DB, tokenStore auth.TokenStore
 	authAPI.POST("/postThumb/do", postThumbHandler.DoPostThumbHandler)
 	authAPI.POST("/postFavour/do", postFavourHandler.DoPostFavourHandler)
 	authAPI.POST("/postFavour/my/list/page", postFavourHandler.ListMyFavourPostHandler)
+
 	authAPI.POST("/file/upload", fileHandler.UploadFileHandler)
 
 	// 管理员接口

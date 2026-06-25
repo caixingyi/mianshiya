@@ -59,7 +59,7 @@ func main() {
 
 		c.Next()
 	})
-	router.RegisterRouter(r, database, tokenStore)
+	router.RegisterRouter(r, database, rdb, tokenStore)
 
 	r.Run("0.0.0.0:8101")
 }

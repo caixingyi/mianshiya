@@ -304,3 +304,55 @@ func (h *Handler) GetUserVOHandler(c *gin.Context) {
 	// 3. 返回用户信息
 	c.JSON(200, response.Success(user))
 }
+
+// AddUserSignInHandler 添加用户签到
+func (h *Handler) AddUserSignInHandler(c *gin.Context) {
+	value, exists := c.Get(auth.ContextUserIDKey)
+	if !exists {
+		c.JSON(200, response.Error(errorcode.NotLoginError))
+		return
+	}
+
+	userID, ok := value.(int64)
+	if !ok {
+		c.JSON(200, response.Error(errorcode.SystemError))
+		return
+	}
+
+	result, err := h.service.AddUserSignIn(c.Request.Context(), userID)
+	if err != nil {
+		c.JSON(200, response.ErrorWithMessage(errorcode.SystemError, err.Error()))
+		return
+	}
+
+	c.JSON(200, response.Success(result))
+}
+
+// GetUserSignInHandler 获取用户签到记录
+func (h *Handler) GetUserSignInHandler(c *gin.Context) {
+	var req GetUserSignInRequest
+	if err := c.ShouldBindQuery(&req); err != nil {
+		c.JSON(200, response.ErrorWithMessage(errorcode.ParamsError, "Invalid request parameters"))
+		return
+	}
+
+	value, exists := c.Get(auth.ContextUserIDKey)
+	if !exists {
+		c.JSON(200, response.Error(errorcode.NotLoginError))
+		return
+	}
+
+	userID, ok := value.(int64)
+	if !ok {
+		c.JSON(200, response.Error(errorcode.SystemError))
+		return
+	}
+
+	days, err := h.service.GetUserSignInRecord(c.Request.Context(), userID, req.Year)
+	if err != nil {
+		c.JSON(200, response.ErrorWithMessage(errorcode.SystemError, err.Error()))
+		return
+	}
+
+	c.JSON(200, response.Success(days))
+}

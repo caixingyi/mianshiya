@@ -1,20 +1,25 @@
 package user
 
 import (
+	"context"
 	"crypto/md5"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"mianshiya-go-backend/internal/response"
+	"time"
 
+	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 )
 
 type Service struct {
 	repo *Repository
+	rdb  *redis.Client
 }
 
-func NewService(repo *Repository) *Service {
-	return &Service{repo: repo}
+func NewService(repo *Repository, rdb *redis.Client) *Service {
+	return &Service{repo: repo, rdb: rdb}
 }
 
 const salt = "mianshiya"
@@ -302,4 +307,68 @@ func (s *Service) GetUserResponseByID(id int64) (*UserResponse, error) {
 		return nil, err
 	}
 	return toUserResponse(user), nil
+}
+
+func getUserSignInRedisKey(year int, userID int64) string {
+	return fmt.Sprintf("user:signins:%d:%d", year, userID)
+}
+
+// AddUserSignIn 添加用户签到
+func (s *Service) AddUserSignIn(ctx context.Context, userID int64) (bool, error) {
+	// 1. 校验参数
+	if userID <= 0 {
+		return false, errors.New("无效的用户ID")
+	}
+	if s.rdb == nil {
+		return false, errors.New("Redis 未初始化")
+	}
+	// 2. 获取当前年份和今天是今年的第几天
+	now := time.Now()
+	year := now.Year()
+	dayOfYear := now.YearDay()
+	// 3. 构造 Redis key
+	key := getUserSignInRedisKey(year, userID)
+
+	signed, err := s.rdb.GetBit(ctx, key, int64(dayOfYear)).Result()
+	if err != nil {
+		return false, err
+	}
+	if signed == 1 {
+		return true, nil
+	}
+
+	if err := s.rdb.SetBit(ctx, key, int64(dayOfYear), 1).Err(); err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+
+// GetUserSignInRecord 获取用户某年的签到记录
+func (s *Service) GetUserSignInRecord(ctx context.Context, userID int64, year int) ([]int, error) {
+	if userID <= 0 {
+		return nil, errors.New("无效的用户ID")
+	}
+	if s.rdb == nil {
+		return nil, errors.New("Redis 未初始化")
+	}
+	if year <= 0 {
+		year = time.Now().Year()
+	}
+
+	key := getUserSignInRedisKey(year, userID)
+
+	days := make([]int, 0)
+
+	for day := 1; day <= 366; day++ {
+		signed, err := s.rdb.GetBit(ctx, key, int64(day)).Result()
+		if err != nil {
+			return nil, err
+		}
+		if signed == 1 {
+			days = append(days, day)
+		}
+	}
+
+	return days, nil
 }
