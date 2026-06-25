@@ -87,6 +87,68 @@ func (h *Handler) ListQuestionVOHandler(c *gin.Context) {
 	c.JSON(200, response.Success(page))
 }
 
+// ListMyQuestionVOHandler 处理获取我的题目列表的请求
+func (h *Handler) ListMyQuestionVOHandler(c *gin.Context) {
+	var req ListQuestionRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(200, response.ErrorWithMessage(errorcode.ParamsError, "Invalid request parameters"))
+		return
+	}
+
+	value, exists := c.Get(auth.ContextUserIDKey)
+	if !exists {
+		c.JSON(200, response.Error(errorcode.NotLoginError))
+		return
+	}
+
+	userID, ok := value.(int64)
+	if !ok {
+		c.JSON(200, response.Error(errorcode.SystemError))
+		return
+	}
+
+	page, err := h.service.ListMyQuestions(&req, userID)
+	if err != nil {
+		c.JSON(200, response.ErrorWithMessage(errorcode.ParamsError, err.Error()))
+		return
+	}
+
+	c.JSON(200, response.Success(page))
+}
+
+// EditQuestionHandler 处理用户编辑题目的请求
+func (h *Handler) EditQuestionHandler(c *gin.Context) {
+	var req UpdateQuestionRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(200, response.ErrorWithMessage(errorcode.ParamsError, "Invalid request parameters"))
+		return
+	}
+
+	value, exists := c.Get(auth.ContextUserIDKey)
+	if !exists {
+		c.JSON(200, response.Error(errorcode.NotLoginError))
+		return
+	}
+
+	userID, ok := value.(int64)
+	if !ok {
+		c.JSON(200, response.Error(errorcode.SystemError))
+		return
+	}
+
+	err := h.service.EditQuestion(&req, userID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		c.JSON(200, response.Error(errorcode.NotFoundError))
+		return
+	}
+	if err != nil {
+		c.JSON(200, response.ErrorWithMessage(errorcode.ParamsError, err.Error()))
+		return
+	}
+
+	c.JSON(200, response.Success(true))
+}
+
 // DeleteQuestionHandler 处理删除题目的请求
 func (h *Handler) DeleteQuestionHandler(c *gin.Context) {
 	var req DeleteQuestionRequest

@@ -121,6 +121,18 @@ func (s *Service) ListQuestions(req *ListQuestionRequest) (*response.PageRespons
 	}, nil
 }
 
+// ListMyQuestions 获取我的题目列表
+func (s *Service) ListMyQuestions(req *ListQuestionRequest, userID int64) (*response.PageResponse[QuestionResponse], error) {
+	if req == nil {
+		return nil, errors.New("请求参数不能为空")
+	}
+	if userID <= 0 {
+		return nil, errors.New("无效的用户ID")
+	}
+	req.UserID = userID
+	return s.ListQuestions(req)
+}
+
 // DeleteQuestion 删除题目
 func (s *Service) DeleteQuestion(id int64) error {
 	if id <= 0 {
@@ -158,6 +170,24 @@ func (s *Service) UpdateQuestion(req *UpdateQuestionRequest) error {
 	}
 
 	return s.repo.UpdateByID(req.ID, updates)
+}
+
+// EditQuestion 编辑题目（用户接口）
+func (s *Service) EditQuestion(req *UpdateQuestionRequest, userID int64) error {
+	if req == nil || req.ID <= 0 {
+		return errors.New("参数错误")
+	}
+	if userID <= 0 {
+		return errors.New("无效的用户ID")
+	}
+	question, err := s.repo.FindByID(req.ID)
+	if err != nil {
+		return err
+	}
+	if question.UserID != userID {
+		return errors.New("无权限编辑该题目")
+	}
+	return s.UpdateQuestion(req)
 }
 
 // ListQuestionPage 获取题目分页列表

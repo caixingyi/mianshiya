@@ -120,6 +120,18 @@ func (s *Service) ListQuestionBanks(req *ListQuestionBankRequest) (*response.Pag
 	}, nil
 }
 
+// ListMyQuestionBanks 获取我的题库列表
+func (s *Service) ListMyQuestionBanks(req *ListQuestionBankRequest, userID int64) (*response.PageResponse[QuestionBankResponse], error) {
+	if req == nil {
+		return nil, errors.New("请求参数不能为空")
+	}
+	if userID <= 0 {
+		return nil, errors.New("无效的用户ID")
+	}
+	req.UserID = userID
+	return s.ListQuestionBanks(req)
+}
+
 // DeleteQuestionBank 删除题库
 func (s *Service) DeleteQuestionBank(id int64) error {
 	// 1. 校验参数
@@ -153,6 +165,24 @@ func (s *Service) UpdateQuestionBank(req *UpdateQuestionBankRequest) error {
 	}
 
 	return s.repo.UpdateByID(req.ID, updates)
+}
+
+// EditQuestionBank 编辑题库（用户接口）
+func (s *Service) EditQuestionBank(req *UpdateQuestionBankRequest, userID int64) error {
+	if req == nil || req.ID <= 0 {
+		return errors.New("参数错误")
+	}
+	if userID <= 0 {
+		return errors.New("无效的用户ID")
+	}
+	questionBank, err := s.repo.FindByID(req.ID)
+	if err != nil {
+		return err
+	}
+	if questionBank.UserID != userID {
+		return errors.New("无权限编辑该题库")
+	}
+	return s.UpdateQuestionBank(req)
 }
 
 // ListQuestionBankPage 获取题库列表（分页）
