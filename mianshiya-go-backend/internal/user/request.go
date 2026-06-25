@@ -20,7 +20,14 @@ type UpdateMyRequest struct {
 	UserProfile string `json:"userProfile"`
 }
 
-// 管理员更新用户信息请求参数
+// 编辑当前登录用户信息请求参数
+type EditUserRequest struct {
+	UserName    string `json:"userName"`
+	UserAvatar  string `json:"userAvatar"`
+	UserProfile string `json:"userProfile"`
+}
+
+// 管理员添加用户请求参数
 type AddUserRequest struct {
 	UserAccount string `json:"userAccount"`
 	UserName    string `json:"userName"`

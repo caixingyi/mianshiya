@@ -212,6 +212,55 @@ func (h *Handler) ListUserHandler(c *gin.Context) {
 	c.JSON(200, response.Success(users))
 }
 
+// 编辑当前登录用户信息的 Handler
+func (h *Handler) EditUserHandler(c *gin.Context) {
+	value, exists := c.Get(auth.ContextUserIDKey)
+	if !exists {
+		c.JSON(200, response.Error(errorcode.NotLoginError))
+		return
+	}
+	userID, ok := value.(int64)
+	if !ok {
+		c.JSON(200, response.Error(errorcode.SystemError))
+		return
+	}
+
+	var req EditUserRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(200, response.Error(errorcode.ParamsError))
+		return
+	}
+
+	err := h.service.EditUser(userID, &req)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		c.JSON(200, response.Error(errorcode.NotFoundError))
+		return
+	}
+	if err != nil {
+		c.JSON(200, response.ErrorWithMessage(errorcode.ParamsError, err.Error()))
+		return
+	}
+
+	c.JSON(200, response.Success(true))
+}
+
+// ListUserVOHandler 分页查询用户 VO 列表
+func (h *Handler) ListUserVOHandler(c *gin.Context) {
+	var req ListUserRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(200, response.ErrorWithMessage(errorcode.ParamsError, err.Error()))
+		return
+	}
+
+	users, err := h.service.ListUserVO(&req)
+	if err != nil {
+		c.JSON(200, response.ErrorWithMessage(errorcode.ParamsError, err.Error()))
+		return
+	}
+
+	c.JSON(200, response.Success(users))
+}
+
 // 获取用户信息 Handler
 func (h *Handler) GetUserHandler(c *gin.Context) {
 	// 1. 解析请求参数

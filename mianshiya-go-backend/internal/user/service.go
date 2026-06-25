@@ -136,6 +136,18 @@ func (s *Service) UpdateMy(userID int64, req *UpdateMyRequest) error {
 	return s.repo.UpdateByID(userID, updates)
 }
 
+// EditUser 编辑当前登录用户信息
+func (s *Service) EditUser(userID int64, req *EditUserRequest) error {
+	if req == nil {
+		return errors.New("请求参数不能为空")
+	}
+	return s.UpdateMy(userID, &UpdateMyRequest{
+		UserName:    req.UserName,
+		UserAvatar:  req.UserAvatar,
+		UserProfile: req.UserProfile,
+	})
+}
+
 // IsAdmin 判断用户是否为管理员
 func (s *Service) IsAdmin(userID int64) (bool, error) {
 	if userID <= 0 {
@@ -261,6 +273,11 @@ func (s *Service) ListUsers(req *ListUserRequest) (*response.PageResponse[UserRe
 		Current:  req.Current,
 		PageSize: req.PageSize,
 	}, nil
+}
+
+// ListUserVO 分页查询用户 VO 列表
+func (s *Service) ListUserVO(req *ListUserRequest) (*response.PageResponse[UserResponse], error) {
+	return s.ListUsers(req)
 }
 
 // 转换为用户响应结构
