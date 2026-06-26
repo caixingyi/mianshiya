@@ -4,6 +4,7 @@ package config
 type Config struct {
 	Database DatabaseConfig
 	Redis    RedisConfig
+	AI       AIConfig
 }
 
 // DatabaseConfig 定义了数据库连接的配置项
@@ -39,5 +40,17 @@ func Load() (*Config, error) {
 			Password: "",
 			DB:       0,
 		},
+		AI: AIConfig{
+			APIKey:  "ark-7a54e8b4-aeac-4aa4-9df3-8532b683b968-fa9cf",
+			BaseURL: "https://ark.cn-beijing.volces.com/api/v3",
+			Model:   "doubao-seed-2-1-pro-260628",
+		},
 	}, nil
+}
+
+// AIConfig 定义了 AI 调用的配置项（火山引擎 DeepSeek）
+type AIConfig struct {
+	APIKey  string
+	BaseURL string
+	Model   string
 }

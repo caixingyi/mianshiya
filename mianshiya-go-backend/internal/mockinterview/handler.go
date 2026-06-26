@@ -121,6 +121,30 @@ func (h *Handler) ListMockInterviewHandler(c *gin.Context) {
 	c.JSON(200, response.Success(page))
 }
 
+// HandleEventHandler 处理模拟面试 AI 对话事件（start/chat/end）
+// 对应 Java: POST /api/mockInterview/handleEvent
+func (h *Handler) HandleEventHandler(c *gin.Context) {
+	var req HandleEventRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(200, response.ErrorWithMessage(errorcode.ParamsError, "Invalid request parameters"))
+		return
+	}
+
+	userID, ok := getLoginUserID(c)
+	if !ok {
+		c.JSON(200, response.Error(errorcode.NotLoginError))
+		return
+	}
+
+	answer, err := h.service.HandleEvent(&req, userID)
+	if err != nil {
+		c.JSON(200, response.ErrorWithMessage(errorcode.ParamsError, err.Error()))
+		return
+	}
+
+	c.JSON(200, response.Success(answer))
+}
+
 // ListMyMockInterviewHandler 处理分页查询我的模拟面试请求
 func (h *Handler) ListMyMockInterviewHandler(c *gin.Context) {
 	var req ListMockInterviewRequest

@@ -5,6 +5,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 
+	"mianshiya-go-backend/internal/ai"
 	"mianshiya-go-backend/internal/auth"
 	"mianshiya-go-backend/internal/file"
 	"mianshiya-go-backend/internal/handler"
@@ -18,7 +19,7 @@ import (
 	"mianshiya-go-backend/internal/user"
 )
 
-func RegisterRouter(r *gin.Engine, database *gorm.DB, rdb *redis.Client, tokenStore auth.TokenStore) {
+func RegisterRouter(r *gin.Engine, database *gorm.DB, rdb *redis.Client, tokenStore auth.TokenStore, aiClient *ai.Client) {
 	r.Static("/api/static", "./uploads")
 
 	api := r.Group("/api")
@@ -62,7 +63,7 @@ func RegisterRouter(r *gin.Engine, database *gorm.DB, rdb *redis.Client, tokenSt
 	fileHandler := file.NewHandler(fileService)
 
 	mockInterviewRepo := mockinterview.NewRepository(database)
-	mockInterviewService := mockinterview.NewService(mockInterviewRepo, userService)
+	mockInterviewService := mockinterview.NewService(mockInterviewRepo, userService, aiClient)
 	mockInterviewHandler := mockinterview.NewHandler(mockInterviewService)
 
 	// 公开接口
@@ -111,6 +112,7 @@ func RegisterRouter(r *gin.Engine, database *gorm.DB, rdb *redis.Client, tokenSt
 	authAPI.POST("/mockInterview/delete", mockInterviewHandler.DeleteMockInterviewHandler)
 	authAPI.GET("/mockInterview/get", mockInterviewHandler.GetMockInterviewHandler)
 	authAPI.POST("/mockInterview/my/list/page/vo", mockInterviewHandler.ListMyMockInterviewHandler)
+	authAPI.POST("/mockInterview/handleEvent", mockInterviewHandler.HandleEventHandler)
 
 	// 管理员接口
 	adminAPI := api.Group("")

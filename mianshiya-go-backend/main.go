@@ -1,6 +1,7 @@
 package main
 
 import (
+	"mianshiya-go-backend/internal/ai"
 	"mianshiya-go-backend/internal/auth"
 	"mianshiya-go-backend/internal/config"
 	"mianshiya-go-backend/internal/db"
@@ -40,6 +41,9 @@ func main() {
 	// 初始化 token 存储
 	tokenStore := auth.NewRedisTokenStore(rdb, 7*24*time.Hour)
 
+	// 初始化 AI 客户端
+	aiClient := ai.NewClient(cfg.AI.APIKey, cfg.AI.BaseURL, cfg.AI.Model)
+
 	// 自动迁移 User 和 QuestionBank 模型
 	if err := database.AutoMigrate(&user.User{}, &questionbank.QuestionBank{}, &question.Question{}, &questionbankquestion.QuestionBankQuestion{}, &post.Post{}, &postthumb.PostThumb{}, &postfavour.PostFavour{}, &mockinterview.MockInterview{}); err != nil {
 		panic(err)
@@ -60,7 +64,7 @@ func main() {
 
 		c.Next()
 	})
-	router.RegisterRouter(r, database, rdb, tokenStore)
+	router.RegisterRouter(r, database, rdb, tokenStore, aiClient)
 
 	r.Run("0.0.0.0:8101")
 }
