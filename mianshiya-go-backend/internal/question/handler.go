@@ -228,3 +228,33 @@ func (h *Handler) BatchDeleteQuestionsHandler(c *gin.Context) {
 
 	c.JSON(200, response.Success(true))
 }
+
+// AIGenerateHandler 处理 AI 生成题目的请求（管理员）
+// 对应 Java: POST /question/ai/generate/question
+func (h *Handler) AIGenerateHandler(c *gin.Context) {
+	var req AIGenerateRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(200, response.ErrorWithMessage(errorcode.ParamsError, "Invalid request parameters"))
+		return
+	}
+
+	// 从 context 取用户 ID（AdminMiddleware 已确保是管理员）
+	value, exists := c.Get(auth.ContextUserIDKey)
+	if !exists {
+		c.JSON(200, response.Error(errorcode.NotLoginError))
+		return
+	}
+	userID, ok := value.(int64)
+	if !ok {
+		c.JSON(200, response.Error(errorcode.SystemError))
+		return
+	}
+
+	err := h.service.AIGenerateQuestions(req.QuestionType, req.Number, userID)
+	if err != nil {
+		c.JSON(200, response.ErrorWithMessage(errorcode.ParamsError, err.Error()))
+		return
+	}
+
+	c.JSON(200, response.Success(true))
+}

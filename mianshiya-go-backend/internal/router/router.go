@@ -32,7 +32,7 @@ func RegisterRouter(r *gin.Engine, database *gorm.DB, rdb *redis.Client, tokenSt
 	userHandler := user.NewHandler(userService, tokenStore)
 
 	questionRepo := question.NewRepository(database)
-	questionService := question.NewService(questionRepo)
+	questionService := question.NewService(questionRepo, aiClient)
 	questionHandler := question.NewHandler(questionService)
 
 	questionBankRepo := questionbank.NewRepository(database)
@@ -132,6 +132,7 @@ func RegisterRouter(r *gin.Engine, database *gorm.DB, rdb *redis.Client, tokenSt
 	adminAPI.POST("/question/update", questionHandler.UpdateQuestionHandler)
 	adminAPI.POST("/question/list/page", questionHandler.ListQuestionHandler)
 	adminAPI.POST("/question/delete/batch", questionHandler.BatchDeleteQuestionsHandler)
+	adminAPI.POST("/question/ai/generate/question", questionHandler.AIGenerateHandler)
 	adminAPI.POST("/questionBankQuestion/add", questionBankQuestionHandler.AddQuestionBankQuestionHandler)
 	adminAPI.POST("/questionBankQuestion/delete", questionBankQuestionHandler.DeleteQuestionBankQuestionHandler)
 	adminAPI.POST("/questionBankQuestion/update", questionBankQuestionHandler.UpdateQuestionBankQuestionHandler)

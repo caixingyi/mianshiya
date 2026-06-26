@@ -3,17 +3,24 @@ package question
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
+	"log"
+	"strings"
+	"time"
+
+	"mianshiya-go-backend/internal/ai"
 	"mianshiya-go-backend/internal/response"
 )
 
 // Service 题目服务层
 type Service struct {
 	repo *Repository
+	ai   *ai.Client // AI 客户端，用于生成题目和题解
 }
 
 // NewService 创建题目服务实例
-func NewService(r *Repository) *Service {
-	return &Service{repo: r}
+func NewService(r *Repository, aiClient *ai.Client) *Service {
+	return &Service{repo: r, ai: aiClient}
 }
 
 // 转换 Question 到 QuestionResponse
@@ -233,4 +240,156 @@ func (s *Service) BatchDeleteQuestions(req *BatchDeleteQuestionRequest) error {
 		}
 	}
 	return s.repo.DeleteBatchByIDs(req.QuestionIDList)
+}
+
+// ======================== AI 生成题目 ========================
+
+// AIGenerateQuestions AI 生成题目，对应 Java 的 aiGenerateQuestions
+// questionType: 题目方向，如 "Java"
+// number: 生成数量，如 10
+// userID: 创建者 ID
+func (s *Service) AIGenerateQuestions(questionType string, number int, userID int64) error {
+	// 1. 参数校验
+	if questionType == "" {
+		return errors.New("题目类型不能为空")
+	}
+	if number <= 0 {
+		number = 10 // 默认 10 道
+	}
+	if userID <= 0 {
+		return errors.New("无效的用户ID")
+	}
+
+	// 2. 构建 system prompt — 告诉 AI 它是什么角色、输出什么格式
+	systemPrompt := fmt.Sprintf(
+		"你是一位专业的程序员面试官，你要帮我生成 %d 道 %s 面试题，要求输出格式如下：\n\n"+
+			"1. 什么是 Java 中的反射？\n"+
+			"2. Java 8 中的 Stream API 有什么作用？\n"+
+			"3. xxxxxx\n\n"+
+			"除此之外，请不要输出任何多余的内容，不要输出开头、也不要输出结尾，只输出上面的列表。\n\n"+
+			"接下来我会给你要生成的题目数量和题目方向",
+		number, questionType,
+	)
+
+	// 3. 构建 user prompt
+	userPrompt := fmt.Sprintf("题目数量：%d, 题目方向：%s", number, questionType)
+
+	// 4. 调用 AI 生成题目列表
+	answer, err := s.ai.Chat([]ai.ChatMessage{
+		{Role: "system", Content: systemPrompt},
+		{Role: "user", Content: userPrompt},
+	})
+	if err != nil {
+		return fmt.Errorf("AI 生成题目失败: %w", err)
+	}
+
+	// 5. 解析 AI 返回的题目列表
+	// AI 返回格式：每行一个题目，如 "1. 什么是反射？"
+	lines := strings.Split(answer, "\n")
+	titles := make([]string, 0, len(lines))
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue // 跳过空行
+		}
+		// 去掉序号前缀 "1. "、"2. " 等
+		// 找到第一个空格或 ". " 后的内容
+		title := removeNumberPrefix(line)
+		// 去掉反引号（AI 偶尔会输出 markdown 代码标记）
+		title = strings.ReplaceAll(title, "`", "")
+		title = strings.TrimSpace(title)
+		if title != "" {
+			titles = append(titles, title)
+		}
+	}
+
+	if len(titles) == 0 {
+		return errors.New("AI 未生成任何题目")
+	}
+
+	// 6. 逐题生成题解（带重试），构建 Question 列表
+	questions := make([]*Question, 0, len(titles))
+	for _, title := range titles {
+		answer, err := s.generateAnswerWithRetry(title, 3)
+		if err != nil {
+			log.Printf("[AI题解] 重试3次后仍失败 [%s]: %v", title, err)
+			continue // 跳过这道题，不入库
+		}
+		log.Printf("[AI题解] 成功 [%s]: answer长度=%d", title, len(answer))
+		questions = append(questions, &Question{
+			Title:  title,
+			Answer: answer,
+			Tags:   `["待审核"]`, // 和 Java 一致，打上"待审核"标签
+			UserID: userID,
+		})
+	}
+
+	// 7. 批量入库
+	return s.repo.BatchCreate(questions)
+}
+
+// generateAnswer 为题目生成题解，对应 Java 的 aiGenerateQuestionAnswer
+func (s *Service) generateAnswer(title string) (string, error) {
+	systemPrompt := "你是一位专业的程序员面试官，我会给你一道面试题，请帮我生成详细的题解。要求如下：\n\n" +
+		"1. 题解的语句要自然流畅\n" +
+		"2. 题解可以先给出总结性的回答，再详细解释\n" +
+		"3. 要使用 Markdown 语法输出\n\n" +
+		"除此之外，请不要输出任何多余的内容，不要输出开头、也不要输出结尾，只输出题解。\n\n" +
+		"接下来我会给你要生成的面试题"
+
+	userPrompt := fmt.Sprintf("面试题：%s", title)
+
+	return s.ai.Chat([]ai.ChatMessage{
+		{Role: "system", Content: systemPrompt},
+		{Role: "user", Content: userPrompt},
+	})
+}
+
+// generateAnswerWithRetry 带重试的题解生成
+// maxRetries: 最大重试次数（不含首次调用）
+func (s *Service) generateAnswerWithRetry(title string, maxRetries int) (string, error) {
+	var lastErr error
+	for i := 0; i <= maxRetries; i++ {
+		if i > 0 {
+			// 重试前等待，递增延迟：1s → 2s → 3s
+			time.Sleep(time.Duration(i) * time.Second)
+			log.Printf("[AI题解] 第%d次重试 [%s]", i, title)
+		}
+
+		answer, err := s.generateAnswer(title)
+		if err != nil {
+			lastErr = err
+			continue
+		}
+		if answer == "" {
+			lastErr = errors.New("AI 返回空内容")
+			continue
+		}
+		return answer, nil
+	}
+	return "", fmt.Errorf("重试%d次后仍失败: %w", maxRetries, lastErr)
+}
+
+// removeNumberPrefix 去掉题目行前面的序号，如 "1. "、"1、"、"1."
+// 对应 Java 的 StrUtil.removePrefix(line, StrUtil.subBefore(line, " ", false))
+func removeNumberPrefix(line string) string {
+	// 先转换成 rune 切片，方便处理中文字符
+	runes := []rune(line)
+	i := 0
+	// 跳过数字
+	for i < len(runes) && runes[i] >= '0' && runes[i] <= '9' {
+		i++
+	}
+	// 跳过分隔符：. 、 . 、 （中英文句号、顿号）
+	if i < len(runes) && (runes[i] == '.' || runes[i] == '、' || runes[i] == '。') {
+		i++
+	}
+	// 跳过空格
+	if i < len(runes) && runes[i] == ' ' {
+		i++
+	}
+	if i >= len(runes) {
+		return line
+	}
+	return string(runes[i:])
 }

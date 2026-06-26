@@ -46,3 +46,9 @@ type UpdateQuestionRequest struct {
 type BatchDeleteQuestionRequest struct {
 	QuestionIDList []int64 `json:"questionIdList"`
 }
+
+// AIGenerateRequest AI 生成题目请求参数，对应 Java 的 QuestionAIGenerateRequest
+type AIGenerateRequest struct {
+	QuestionType string `json:"questionType" binding:"required"` // 题目类型，比如 "Java"
+	Number       int    `json:"number"`                          // 题目数量，默认 10
+}

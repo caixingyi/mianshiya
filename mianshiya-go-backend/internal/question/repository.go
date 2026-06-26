@@ -124,6 +124,14 @@ func (r *Repository) DeleteByID(id int64) error {
 	return nil
 }
 
+// BatchCreate 批量创建题目，对应 Java 的 saveBatch
+func (r *Repository) BatchCreate(questions []*Question) error {
+	if len(questions) == 0 {
+		return nil
+	}
+	return r.db.Create(&questions).Error
+}
+
 // DeleteBatchByIDs 根据 ID 列表批量删除题目（软删除）
 func (r *Repository) DeleteBatchByIDs(ids []int64) error {
 	result := r.db.Model(&Question{}).

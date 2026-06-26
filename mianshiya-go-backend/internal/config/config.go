@@ -43,7 +43,7 @@ func Load() (*Config, error) {
 		AI: AIConfig{
 			APIKey:  "ark-7a54e8b4-aeac-4aa4-9df3-8532b683b968-fa9cf",
 			BaseURL: "https://ark.cn-beijing.volces.com/api/v3",
-			Model:   "doubao-seed-2-1-pro-260628",
+			Model:   "deepseek-v4-flash-260425",
 		},
 	}, nil
 }
