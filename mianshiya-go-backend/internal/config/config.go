@@ -5,6 +5,7 @@ type Config struct {
 	Database DatabaseConfig
 	Redis    RedisConfig
 	AI       AIConfig
+	ES       ESConfig
 }
 
 // DatabaseConfig 定义了数据库连接的配置项
@@ -45,6 +46,9 @@ func Load() (*Config, error) {
 			BaseURL: "https://ark.cn-beijing.volces.com/api/v3",
 			Model:   "deepseek-v4-flash-260425",
 		},
+		ES: ESConfig{
+			Addresses: []string{"http://127.0.0.1:9200"},
+		},
 	}, nil
 }
 
@@ -53,4 +57,8 @@ type AIConfig struct {
 	APIKey  string
 	BaseURL string
 	Model   string
+}
+
+type ESConfig struct {
+	Addresses []string // ES 地址列表，单机就是 ["http://localhost:9200"]
 }

@@ -7,6 +7,7 @@ import (
 
 	"mianshiya-go-backend/internal/ai"
 	"mianshiya-go-backend/internal/auth"
+	"mianshiya-go-backend/internal/es"
 	"mianshiya-go-backend/internal/file"
 	"mianshiya-go-backend/internal/handler"
 	"mianshiya-go-backend/internal/mockinterview"
@@ -19,7 +20,7 @@ import (
 	"mianshiya-go-backend/internal/user"
 )
 
-func RegisterRouter(r *gin.Engine, database *gorm.DB, rdb *redis.Client, tokenStore auth.TokenStore, aiClient *ai.Client) {
+func RegisterRouter(r *gin.Engine, database *gorm.DB, rdb *redis.Client, tokenStore auth.TokenStore, aiClient *ai.Client, esClient *es.Client) {
 	r.Static("/api/static", "./uploads")
 
 	api := r.Group("/api")
@@ -32,7 +33,7 @@ func RegisterRouter(r *gin.Engine, database *gorm.DB, rdb *redis.Client, tokenSt
 	userHandler := user.NewHandler(userService, tokenStore)
 
 	questionRepo := question.NewRepository(database)
-	questionService := question.NewService(questionRepo, aiClient)
+	questionService := question.NewService(questionRepo, aiClient, esClient)
 	questionHandler := question.NewHandler(questionService)
 
 	questionBankRepo := questionbank.NewRepository(database)
@@ -75,7 +76,7 @@ func RegisterRouter(r *gin.Engine, database *gorm.DB, rdb *redis.Client, tokenSt
 	api.POST("/questionBank/list/page/vo", questionBankHandler.ListQuestionBankVOHandler)
 	api.GET("/question/get/vo", questionHandler.GetQuestionVOHandler)
 	api.POST("/question/list/page/vo", questionHandler.ListQuestionVOHandler)
-	api.POST("/question/search/page/vo", questionHandler.ListQuestionVOHandler)
+	api.POST("/question/search/page/vo", questionHandler.SearchQuestionHandler)
 	api.GET("/questionBankQuestion/get/vo", questionBankQuestionHandler.GetQuestionBankQuestionVOHandler)
 	api.POST("/questionBankQuestion/list/page/vo", questionBankQuestionHandler.ListQuestionBankQuestionVOHandler)
 	api.GET("/post/get/vo", auth.OptionalAuthMiddleware(tokenStore), postHandler.GetPostVOHandler)

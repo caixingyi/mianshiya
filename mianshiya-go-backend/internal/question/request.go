@@ -47,6 +47,13 @@ type BatchDeleteQuestionRequest struct {
 	QuestionIDList []int64 `json:"questionIdList"`
 }
 
+// SearchQuestionRequest 搜索题目请求
+type SearchQuestionRequest struct {
+	SearchText string `json:"searchText" binding:"required"`
+	Current    int64  `json:"current"`
+	PageSize   int64  `json:"pageSize"`
+}
+
 // AIGenerateRequest AI 生成题目请求参数，对应 Java 的 QuestionAIGenerateRequest
 type AIGenerateRequest struct {
 	QuestionType string `json:"questionType" binding:"required"` // 题目类型，比如 "Java"

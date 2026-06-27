@@ -5,10 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 	"time"
 
 	"mianshiya-go-backend/internal/ai"
+	"mianshiya-go-backend/internal/es"
 	"mianshiya-go-backend/internal/response"
 )
 
@@ -16,11 +18,12 @@ import (
 type Service struct {
 	repo *Repository
 	ai   *ai.Client // AI 客户端，用于生成题目和题解
+	es   *es.Client // ES 客户端，用于搜索题目
 }
 
 // NewService 创建题目服务实例
-func NewService(r *Repository, aiClient *ai.Client) *Service {
-	return &Service{repo: r, ai: aiClient}
+func NewService(r *Repository, aiClient *ai.Client, esClient *es.Client) *Service {
+	return &Service{repo: r, ai: aiClient, es: esClient}
 }
 
 // 转换 Question 到 QuestionResponse
@@ -44,6 +47,11 @@ func (s *Service) toQuestionResponse(question *Question) (*QuestionResponse, err
 }
 
 // AddQuestion 添加题目
+// req: 添加题目的请求参数
+// userID: 当前登录用户的 ID
+// 返回值: 新增题目的 ID，或错误信息
+// 该方法会将题目保存到数据库，并异步同步到 Elasticsearch
+// 如果 Elasticsearch 同步失败，不会影响主流程
 func (s *Service) AddQuestion(req *AddQuestionRequest, userID int64) (int64, error) {
 	// 参数校验
 	if req == nil {
@@ -75,7 +83,19 @@ func (s *Service) AddQuestion(req *AddQuestionRequest, userID int64) (int64, err
 		Answer:  req.Answer,
 		UserID:  userID,
 	}
-	return s.repo.Create(question)
+	id, err := s.repo.Create(question)
+	if err != nil {
+		return 0, err
+	}
+	// 双写 ES(异步，失败不影响主流程)
+	question.ID = id // 确保 ID 已设置
+	go func() {
+		if err := s.es.IndexDocument("questions", id, question); err != nil {
+			log.Printf("[ES] 同步题目到 Elasticsearch 失败: %v", err)
+		}
+	}()
+
+	return id, nil
 }
 
 // GetQuestionResponseByID 根据 ID 获取题目详情
@@ -145,7 +165,20 @@ func (s *Service) DeleteQuestion(id int64) error {
 	if id <= 0 {
 		return errors.New("参数错误")
 	}
-	return s.repo.DeleteByID(id)
+
+	// 从MySQL中删除题目
+	err := s.repo.DeleteByID(id)
+	if err != nil {
+		return err
+	}
+
+	// 异步删除 Elasticsearch 中的题目
+	go func() {
+		if err := s.es.DeleteDocument("questions", strconv.FormatInt(id, 10)); err != nil {
+			log.Printf("[ES] 删除题目从 Elasticsearch 失败: %v", err)
+		}
+	}()
+	return nil
 }
 
 // UpdateQuestion 更新题目
@@ -175,8 +208,23 @@ func (s *Service) UpdateQuestion(req *UpdateQuestionRequest) error {
 	if len(updates) == 0 {
 		return errors.New("没有要更新的字段")
 	}
-
-	return s.repo.UpdateByID(req.ID, updates)
+	// 更新Mysql数据库
+	err := s.repo.UpdateByID(req.ID, updates)
+	if err != nil {
+		return err
+	}
+	// 异步更新 Elasticsearch
+	go func() {
+		question, err := s.repo.FindByID(req.ID)
+		if err != nil {
+			log.Printf("[ES] 更新题目到 Elasticsearch 失败: %v", err)
+			return
+		}
+		if err := s.es.IndexDocument("questions", req.ID, question); err != nil {
+			log.Printf("[ES] 更新题目到 Elasticsearch 失败: %v", err)
+		}
+	}()
+	return nil
 }
 
 // EditQuestion 编辑题目（用户接口）
@@ -239,7 +287,87 @@ func (s *Service) BatchDeleteQuestions(req *BatchDeleteQuestionRequest) error {
 			return errors.New("参数错误")
 		}
 	}
-	return s.repo.DeleteBatchByIDs(req.QuestionIDList)
+	if err := s.repo.DeleteBatchByIDs(req.QuestionIDList); err != nil {
+		return err
+	}
+
+	// 双写 ES：逐条异步删除
+	for _, id := range req.QuestionIDList {
+		go func(questionID int64) {
+			if err := s.es.DeleteDocument("questions", strconv.FormatInt(questionID, 10)); err != nil {
+				log.Printf("[ES] 删除题目失败 [%d]: %v", questionID, err)
+			}
+		}(id)
+	}
+
+	return nil
+}
+
+// SearchQuestions 用 ES 全文搜索题目，ES 失败降级到 MySQL
+// keyword: 搜索关键词
+// current/pageSize: 分页
+func (s *Service) SearchQuestions(keyword string, current, pageSize int64) (*response.PageResponse[QuestionResponse], error) {
+	if current <= 0 {
+		current = 1
+	}
+	if pageSize <= 0 {
+		pageSize = 10
+	}
+	if pageSize > 200 {
+		return nil, errors.New("参数错误")
+	}
+
+	// 1. 构造 ES 查询 DSL（JSON）
+	// multi_match 在 title 和 content 两个字段里搜 keyword
+	query := map[string]any{
+		"query": map[string]any{
+			"multi_match": map[string]any{
+				"query":  keyword,
+				"fields": []string{"title", "content", "answer"},
+			},
+		},
+		"from": (current - 1) * pageSize, // 偏移量
+		"size": pageSize,                 // 返回数量
+	}
+	queryJSON, _ := json.Marshal(query)
+
+	// 2. 调 ES 搜索
+	result, err := s.es.Search("questions", queryJSON)
+	if err != nil {
+		// ES 挂了，降级到 MySQL LIKE
+		log.Printf("[ES] 搜索失败，降级到 MySQL: %v", err)
+		return s.searchFromMySQL(keyword, current, pageSize)
+	}
+
+	// 3. 解析 ES 命中的文档
+	records := make([]QuestionResponse, 0, len(result.Hits))
+	for _, hit := range result.Hits {
+		var q Question
+		if err := json.Unmarshal(hit.Source, &q); err != nil {
+			continue
+		}
+		resp, _ := s.toQuestionResponse(&q)
+		if resp != nil {
+			records = append(records, *resp)
+		}
+	}
+
+	return &response.PageResponse[QuestionResponse]{
+		Current:  current,
+		PageSize: pageSize,
+		Total:    result.Total,
+		Records:  records,
+	}, nil
+}
+
+// searchFromMySQL MySQL LIKE 搜索，作为 ES 的降级方案
+func (s *Service) searchFromMySQL(keyword string, current, pageSize int64) (*response.PageResponse[QuestionResponse], error) {
+	req := &ListQuestionRequest{
+		Current:    current,
+		PageSize:   pageSize,
+		SearchText: keyword,
+	}
+	return s.ListQuestions(req)
 }
 
 // ======================== AI 生成题目 ========================
@@ -325,7 +453,21 @@ func (s *Service) AIGenerateQuestions(questionType string, number int, userID in
 	}
 
 	// 7. 批量入库
-	return s.repo.BatchCreate(questions)
+	if err := s.repo.BatchCreate(questions); err != nil {
+		return err
+	}
+
+	// 8. 双写 ES（异步逐条同步）
+	for _, q := range questions {
+		go func(question *Question) {
+			if err := s.es.IndexDocument("questions", question.ID, question); err != nil {
+				log.Printf("[ES] 同步题目失败 [%d]: %v", question.ID, err)
+			}
+		}(q)
+	}
+
+	return nil
+
 }
 
 // generateAnswer 为题目生成题解，对应 Java 的 aiGenerateQuestionAnswer

@@ -5,6 +5,7 @@ import (
 	"mianshiya-go-backend/internal/auth"
 	"mianshiya-go-backend/internal/config"
 	"mianshiya-go-backend/internal/db"
+	"mianshiya-go-backend/internal/es"
 	"mianshiya-go-backend/internal/mockinterview"
 	"mianshiya-go-backend/internal/post"
 	"mianshiya-go-backend/internal/postfavour"
@@ -44,6 +45,12 @@ func main() {
 	// 初始化 AI 客户端
 	aiClient := ai.NewClient(cfg.AI.APIKey, cfg.AI.BaseURL, cfg.AI.Model)
 
+	// 初始化 ES 客户端
+	esClient, err := es.NewClient(cfg.ES.Addresses)
+	if err != nil {
+		panic(err)
+	}
+
 	// 自动迁移 User 和 QuestionBank 模型
 	if err := database.AutoMigrate(&user.User{}, &questionbank.QuestionBank{}, &question.Question{}, &questionbankquestion.QuestionBankQuestion{}, &post.Post{}, &postthumb.PostThumb{}, &postfavour.PostFavour{}, &mockinterview.MockInterview{}); err != nil {
 		panic(err)
@@ -64,7 +71,7 @@ func main() {
 
 		c.Next()
 	})
-	router.RegisterRouter(r, database, rdb, tokenStore, aiClient)
+	router.RegisterRouter(r, database, rdb, tokenStore, aiClient, esClient)
 
 	r.Run("0.0.0.0:8101")
 }

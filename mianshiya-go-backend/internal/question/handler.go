@@ -229,6 +229,23 @@ func (h *Handler) BatchDeleteQuestionsHandler(c *gin.Context) {
 	c.JSON(200, response.Success(true))
 }
 
+// SearchQuestionHandler 处理 ES 搜索题目的请求
+func (h *Handler) SearchQuestionHandler(c *gin.Context) {
+	var req SearchQuestionRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(200, response.ErrorWithMessage(errorcode.ParamsError, "Invalid request parameters"))
+		return
+	}
+
+	page, err := h.service.SearchQuestions(req.SearchText, req.Current, req.PageSize)
+	if err != nil {
+		c.JSON(200, response.ErrorWithMessage(errorcode.ParamsError, err.Error()))
+		return
+	}
+
+	c.JSON(200, response.Success(page))
+}
+
 // AIGenerateHandler 处理 AI 生成题目的请求（管理员）
 // 对应 Java: POST /question/ai/generate/question
 func (h *Handler) AIGenerateHandler(c *gin.Context) {
