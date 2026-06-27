@@ -48,7 +48,7 @@ func RegisterRouter(r *gin.Engine, database *gorm.DB, rdb *redis.Client, tokenSt
 	)
 	questionBankQuestionHandler := questionbankquestion.NewHandler(questionBankQuestionService)
 	postRepo := post.NewRepository(database)
-	postService := post.NewService(postRepo, userService)
+	postService := post.NewService(postRepo, userService, esClient)
 	postHandler := post.NewHandler(postService)
 
 	postThumbRepo := postthumb.NewRepository(database)
@@ -81,6 +81,7 @@ func RegisterRouter(r *gin.Engine, database *gorm.DB, rdb *redis.Client, tokenSt
 	api.POST("/questionBankQuestion/list/page/vo", questionBankQuestionHandler.ListQuestionBankQuestionVOHandler)
 	api.GET("/post/get/vo", auth.OptionalAuthMiddleware(tokenStore), postHandler.GetPostVOHandler)
 	api.POST("/post/list/page/vo", auth.OptionalAuthMiddleware(tokenStore), postHandler.ListPostVOHandler)
+	api.POST("/post/search/page/vo", auth.OptionalAuthMiddleware(tokenStore), postHandler.SearchPostsHandler)
 	api.POST("/postFavour/list/page", auth.OptionalAuthMiddleware(tokenStore), postFavourHandler.ListFavourPostHandler)
 
 	// 需要认证的接口

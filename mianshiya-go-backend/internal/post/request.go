@@ -46,3 +46,10 @@ type ListPostsRequest struct {
 type GetPostRequest struct {
 	ID int64 `form:"id" binding:"required"`
 }
+
+// SearchPostsRequest 搜索帖子的请求参数
+type SearchPostsRequest struct {
+	Keyword  string `json:"keyword" binding:"required"`
+	Current  int64  `json:"current" binding:"required"`
+	PageSize int64  `json:"pageSize" binding:"required"`
+}

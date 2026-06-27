@@ -16,9 +16,9 @@ type ChatMessage struct {
 
 // HandleEventRequest 处理模拟面试事件请求，对应 Java 的 MockInterviewEventRequest
 type HandleEventRequest struct {
-	Event   string `json:"event" binding:"required"`   // start / chat / end
-	Message string `json:"message"`                     // 用户消息内容，仅 chat 事件需要
-	ID      int64  `json:"id" binding:"required"`       // 模拟面试房间 ID
+	Event   string `json:"event" binding:"required"` // start / chat / end
+	Message string `json:"message"`                  // 用户消息内容，仅 chat 事件需要
+	ID      int64  `json:"id" binding:"required"`    // 模拟面试房间 ID
 }
 
 // AddMockInterviewRequest 创建模拟面试请求参数

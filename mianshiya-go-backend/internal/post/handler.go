@@ -234,3 +234,19 @@ func (h *Handler) ListPostPageHandler(c *gin.Context) {
 
 	c.JSON(200, response.Success(resp))
 }
+
+func (h *Handler) SearchPostsHandler(c *gin.Context) {
+	var req SearchPostsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(200, response.ErrorWithMessage(errorcode.ParamsError, "Invalid request parameters"))
+		return
+	}
+
+	resp, err := h.service.SearchPosts(req.Keyword, req.Current, req.PageSize)
+	if err != nil {
+		c.JSON(200, response.ErrorWithMessage(errorcode.ParamsError, err.Error()))
+		return
+	}
+
+	c.JSON(200, response.Success(resp))
+}

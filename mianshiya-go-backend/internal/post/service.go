@@ -3,19 +3,23 @@ package post
 import (
 	"encoding/json"
 	"errors"
+	"log"
+	"mianshiya-go-backend/internal/es"
 	"mianshiya-go-backend/internal/response"
 	"mianshiya-go-backend/internal/user"
+	"strconv"
 )
 
 // Service 帖子服务层
 type Service struct {
 	repo    *Repository
 	userSvc *user.Service
+	es      *es.Client
 }
 
 // NewService 创建帖子服务实例
-func NewService(r *Repository, userSvc *user.Service) *Service {
-	return &Service{repo: r, userSvc: userSvc}
+func NewService(r *Repository, userSvc *user.Service, esClient *es.Client) *Service {
+	return &Service{repo: r, userSvc: userSvc, es: esClient}
 }
 
 // 转换 Post 到 PostResponse
@@ -74,6 +78,7 @@ func (s *Service) AddPost(req *AddPostRequest, userID int64) (int64, error) {
 	if err != nil {
 		return 0, errors.New("标签格式错误")
 	}
+
 	// 创建 Post 实例
 	post := &Post{
 		Title:   req.Title,
@@ -81,11 +86,21 @@ func (s *Service) AddPost(req *AddPostRequest, userID int64) (int64, error) {
 		UserID:  userID,
 		Tags:    string(tagsBytes),
 	}
+
 	// 调用 Repository 添加帖子
 	postID, err := s.repo.Create(post)
 	if err != nil {
 		return 0, err
 	}
+
+	// 异步添加到 Elasticsearch
+	go func() {
+		if err := s.es.IndexDocument("posts", postID, post); err != nil {
+			// 记录日志或处理错误
+			log.Printf("Failed to index post in Elasticsearch: %v", err)
+		}
+	}()
+
 	return postID, nil
 }
 
@@ -113,8 +128,21 @@ func (s *Service) DeletePost(req *DeletePostRequest, userID int64) error {
 	if post.UserID != userID && !isAdmin {
 		return errors.New("无权限删除该帖子")
 	}
+
 	// 调用 Repository 删除帖子
-	return s.repo.DeleteByID(req.ID)
+	err = s.repo.DeleteByID(req.ID)
+	if err != nil {
+		return errors.New("删除帖子失败")
+	}
+
+	// 异步删除 Elasticsearch 中的帖子
+	go func() {
+		if err := s.es.DeleteDocument("posts", strconv.FormatInt(req.ID, 10)); err != nil {
+			// 记录日志或处理错误
+			log.Printf("Failed to delete post from Elasticsearch: %v", err)
+		}
+	}()
+	return nil
 }
 
 // GetPostByID 获取帖子详情，loginUserID 为 0 表示未登录（不查点赞/收藏状态）
@@ -244,7 +272,24 @@ func (s *Service) UpdatePost(req *UpdatePostRequest, userID int64) error {
 		updates["tags"] = string(tagsBytes)
 	}
 	// 调用 Repository 更新帖子
-	return s.repo.UpdateByID(req.ID, updates)
+	err := s.repo.UpdateByID(req.ID, updates)
+	if err != nil {
+		return errors.New("更新帖子失败")
+	}
+
+	// 异步更新 Elasticsearch 中的帖子
+	go func() {
+		post, err := s.repo.FindByID(req.ID)
+		if err != nil {
+			log.Printf("Failed to find post: %v", err)
+			return
+		}
+		if err := s.es.IndexDocument("posts", req.ID, post); err != nil {
+			log.Printf("Failed to index post in Elasticsearch: %v", err)
+		}
+	}()
+
+	return nil
 }
 
 // EditPost 编辑帖子
@@ -286,6 +331,97 @@ func (s *Service) EditPost(req *EditPostRequest, userID int64) error {
 		}
 		updates["tags"] = string(tagsBytes)
 	}
+
 	// 调用 Repository 更新帖子
-	return s.repo.UpdateByID(post.ID, updates)
+	err = s.repo.UpdateByID(post.ID, updates)
+	if err != nil {
+		return errors.New("更新帖子失败")
+	}
+
+	// 异步更新 Elasticsearch 中的帖子
+	go func() {
+		updatedPost, err := s.repo.FindByID(post.ID)
+		if err != nil {
+			log.Printf("查询帖子失败: %v", err)
+			return
+		}
+		if err := s.es.IndexDocument("posts", post.ID, updatedPost); err != nil {
+			log.Printf("索引帖子到 Elasticsearch 失败: %v", err)
+		}
+	}()
+	return nil
+}
+
+// searchFromMySQL MySQL LIKE 搜索，作为 ES 的降级方案
+func (s *Service) searchFromMySQL(keyword string, current, pageSize int64) (*response.PageResponse[PostResponse], error) {
+	req := &ListPostsRequest{
+		Current:    current,
+		PageSize:   pageSize,
+		SearchText: keyword,
+	}
+	return s.ListPosts(req, 0) // loginUserID=0 表示未登录，不查点赞/收藏状态
+}
+
+func (s *Service) SearchPosts(keyword string, current, pageSize int64) (*response.PageResponse[PostResponse], error) {
+	// 1. 校验参数
+	if keyword == "" {
+		return nil, errors.New("搜索关键词不能为空")
+	}
+	if current <= 0 {
+		current = 1
+	}
+	if pageSize <= 0 {
+		pageSize = 10
+	}
+	if pageSize > 200 {
+		return nil, errors.New("参数错误")
+	}
+	// 2. 构造 ES 查询 DSL（JSON）
+	query := map[string]interface{}{
+		"query": map[string]interface{}{
+			"multi_match": map[string]interface{}{
+				"query":  keyword,
+				"fields": []string{"title", "content", "tags"},
+			},
+		},
+		"from": (current - 1) * pageSize,
+		"size": pageSize,
+	}
+	queryBytes, err := json.Marshal(query)
+	if err != nil {
+		return nil, errors.New("构造 Elasticsearch 查询失败")
+	}
+	// 先尝试从 Elasticsearch 搜索
+	esResults, err := s.es.Search("posts", queryBytes)
+	if err != nil {
+		log.Printf("Elasticsearch 搜索失败: %v", err)
+		// 如果 Elasticsearch 搜索失败，降级到 MySQL 搜索
+		return s.searchFromMySQL(keyword, current, pageSize)
+	}
+
+	// 3. 解析 ES 搜索结果
+	records := make([]PostResponse, 0, len(esResults.Hits))
+	for _, hit := range esResults.Hits {
+		var post Post
+		if err := json.Unmarshal(hit.Source, &post); err != nil {
+			log.Printf("解析 Elasticsearch 搜索结果失败: %v", err)
+			continue
+		}
+		resp, err := s.toPostResponse(&post, 0) // loginUserID=0 表示未登录，不查点赞/收藏状态
+		if err != nil {
+			log.Printf("解析帖子响应失败: %v", err)
+			continue
+		}
+		u, _ := s.userSvc.GetUserResponseByID(post.UserID)
+		if u != nil {
+			resp.User = u
+		}
+		records = append(records, *resp)
+	}
+	return &response.PageResponse[PostResponse]{
+		Current:  current,
+		PageSize: pageSize,
+		Total:    esResults.Total,
+		Records:  records,
+	}, nil
 }
