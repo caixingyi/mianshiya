@@ -1,6 +1,8 @@
 package router
 
 import (
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
@@ -17,6 +19,7 @@ import (
 	"mianshiya-go-backend/internal/question"
 	"mianshiya-go-backend/internal/questionbank"
 	"mianshiya-go-backend/internal/questionbankquestion"
+	"mianshiya-go-backend/internal/ratelimit"
 	"mianshiya-go-backend/internal/user"
 )
 
@@ -73,9 +76,11 @@ func RegisterRouter(r *gin.Engine, database *gorm.DB, rdb *redis.Client, tokenSt
 	api.GET("/user/get/vo", userHandler.GetUserVOHandler)
 	api.POST("/user/list/page/vo", userHandler.ListUserVOHandler)
 	api.GET("/questionBank/get/vo", questionBankHandler.GetQuestionBankVOHandler)
-	api.POST("/questionBank/list/page/vo", questionBankHandler.ListQuestionBankVOHandler)
+	// 公开接口，带限流
+	api.POST("/questionBank/list/page/vo", ratelimit.FixedWindowMiddleware(rdb, "questionbank:list", 100, time.Second), questionBankHandler.ListQuestionBankVOHandler)
 	api.GET("/question/get/vo", questionHandler.GetQuestionVOHandler)
-	api.POST("/question/list/page/vo", questionHandler.ListQuestionVOHandler)
+	// 公开接口，带限流
+	api.POST("/question/list/page/vo", ratelimit.FixedWindowMiddleware(rdb, "question:list", 100, time.Second), questionHandler.ListQuestionVOHandler)
 	api.POST("/question/search/page/vo", questionHandler.SearchQuestionHandler)
 	api.GET("/questionBankQuestion/get/vo", questionBankQuestionHandler.GetQuestionBankQuestionVOHandler)
 	api.POST("/questionBankQuestion/list/page/vo", questionBankQuestionHandler.ListQuestionBankQuestionVOHandler)
