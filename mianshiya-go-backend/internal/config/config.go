@@ -1,11 +1,13 @@
 package config
 
+import "github.com/spf13/viper"
+
 // Config 定义了应用程序的配置项，包括数据库连接配置和 Redis 连接配置，后续可以扩展为更多的配置项
 type Config struct {
-	Database DatabaseConfig
-	Redis    RedisConfig
-	AI       AIConfig
-	ES       ESConfig
+	Database DatabaseConfig `mapstructure:"database"`
+	Redis    RedisConfig    `mapstructure:"redis"`
+	AI       AIConfig       `mapstructure:"ai"`
+	ES       ESConfig       `mapstructure:"es"`
 }
 
 // DatabaseConfig 定义了数据库连接的配置项
@@ -26,39 +28,64 @@ type RedisConfig struct {
 }
 
 // Load 从配置文件或环境变量中加载配置项，目前直接返回硬编码的配置，后续可以扩展为从文件或环境变量加载
+// func Load() (*Config, error) {
+// 	return &Config{
+// 		Database: DatabaseConfig{
+// 			DBUser:     "root",
+// 			DBPassword: "12345678",
+// 			DBHost:     "localhost",
+// 			DBPort:     3306,
+// 			DBName:     "mianshiya",
+// 		},
+// 		Redis: RedisConfig{
+// 			Host:     "localhost",
+// 			Port:     6379,
+// 			Password: "",
+// 			DB:       0,
+// 		},
+// 		AI: AIConfig{
+// 			APIKey:  "ark-7a54e8b4-aeac-4aa4-9df3-8532b683b968-fa9cf",
+// 			BaseURL: "https://ark.cn-beijing.volces.com/api/v3",
+// 			Model:   "deepseek-v4-flash-260425",
+// 		},
+// 		ES: ESConfig{
+// 			Addresses: []string{"http://127.0.0.1:9200"},
+// 		},
+// 	}, nil
+// }
+
 func Load() (*Config, error) {
-	return &Config{
-		Database: DatabaseConfig{
-			DBUser:     "root",
-			DBPassword: "12345678",
-			DBHost:     "localhost",
-			DBPort:     3306,
-			DBName:     "mianshiya",
-		},
-		Redis: RedisConfig{
-			Host:     "localhost",
-			Port:     6379,
-			Password: "",
-			DB:       0,
-		},
-		AI: AIConfig{
-			APIKey:  "ark-7a54e8b4-aeac-4aa4-9df3-8532b683b968-fa9cf",
-			BaseURL: "https://ark.cn-beijing.volces.com/api/v3",
-			Model:   "deepseek-v4-flash-260425",
-		},
-		ES: ESConfig{
-			Addresses: []string{"http://127.0.0.1:9200"},
-		},
-	}, nil
+	v := viper.New()
+
+	// 配置文件名：config.yaml
+	v.SetConfigName("config")
+	v.SetConfigType("yaml")
+
+	// 查找配置文件的位置
+	v.AddConfigPath(".")
+	v.AddConfigPath("./config")
+
+	// 读取配置文件
+	if err := v.ReadInConfig(); err != nil {
+		return nil, err
+	}
+
+	var cfg Config
+	if err := v.Unmarshal(&cfg); err != nil {
+		return nil, err
+	}
+
+	return &cfg, nil
 }
 
-// AIConfig 定义了 AI 调用的配置项（火山引擎 DeepSeek）
+// AIConfig 定义了 AI 服务的配置项，包括 API Key、Base URL 和模型名称
 type AIConfig struct {
-	APIKey  string
-	BaseURL string
-	Model   string
+	APIKey  string `mapstructure:"api_key" json:"api_key" yaml:"api_key"`
+	BaseURL string `mapstructure:"base_url" json:"base_url" yaml:"base_url"`
+	Model   string `mapstructure:"model" json:"model" yaml:"model"`
 }
 
+// ESConfig 定义了 Elasticsearch 的配置项，包括连接地址列表
 type ESConfig struct {
-	Addresses []string // ES 地址列表，单机就是 ["http://localhost:9200"]
+	Addresses []string `mapstructure:"addresses" json:"addresses" yaml:"addresses"`
 }
