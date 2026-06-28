@@ -9,6 +9,7 @@ import (
 
 	"mianshiya-go-backend/internal/ai"
 	"mianshiya-go-backend/internal/auth"
+	"mianshiya-go-backend/internal/circuitbreaker"
 	"mianshiya-go-backend/internal/es"
 	"mianshiya-go-backend/internal/file"
 	"mianshiya-go-backend/internal/handler"
@@ -30,13 +31,15 @@ func RegisterRouter(r *gin.Engine, database *gorm.DB, rdb *redis.Client, tokenSt
 
 	api.GET("/health", handler.HealthHandler)
 	api.GET("/error-demo", handler.ErrorDemoHandler)
+	questionESBreaker := circuitbreaker.NewESBreaker("question-es-search")
+	postESBreaker := circuitbreaker.NewESBreaker("post-es-search")
 
 	userRepo := user.NewRepository(database)
 	userService := user.NewService(userRepo, rdb)
 	userHandler := user.NewHandler(userService, tokenStore)
 
 	questionRepo := question.NewRepository(database)
-	questionService := question.NewService(questionRepo, aiClient, esClient)
+	questionService := question.NewService(questionRepo, aiClient, esClient, questionESBreaker)
 	questionHandler := question.NewHandler(questionService)
 
 	questionBankRepo := questionbank.NewRepository(database)
@@ -51,7 +54,7 @@ func RegisterRouter(r *gin.Engine, database *gorm.DB, rdb *redis.Client, tokenSt
 	)
 	questionBankQuestionHandler := questionbankquestion.NewHandler(questionBankQuestionService)
 	postRepo := post.NewRepository(database)
-	postService := post.NewService(postRepo, userService, esClient)
+	postService := post.NewService(postRepo, userService, esClient, postESBreaker)
 	postHandler := post.NewHandler(postService)
 
 	postThumbRepo := postthumb.NewRepository(database)

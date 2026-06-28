@@ -12,18 +12,21 @@ import (
 	"mianshiya-go-backend/internal/ai"
 	"mianshiya-go-backend/internal/es"
 	"mianshiya-go-backend/internal/response"
+
+	"github.com/sony/gobreaker"
 )
 
 // Service 题目服务层
 type Service struct {
-	repo *Repository
-	ai   *ai.Client // AI 客户端，用于生成题目和题解
-	es   *es.Client // ES 客户端，用于搜索题目
+	repo      *Repository
+	ai        *ai.Client                // AI 客户端，用于生成题目和题解
+	es        *es.Client                // ES 客户端，用于搜索题目
+	esBreaker *gobreaker.CircuitBreaker // ES 熔断器，用于保护 ES 服务
 }
 
 // NewService 创建题目服务实例
-func NewService(r *Repository, aiClient *ai.Client, esClient *es.Client) *Service {
-	return &Service{repo: r, ai: aiClient, es: esClient}
+func NewService(r *Repository, aiClient *ai.Client, esClient *es.Client, esBreaker *gobreaker.CircuitBreaker) *Service {
+	return &Service{repo: r, ai: aiClient, es: esClient, esBreaker: esBreaker}
 }
 
 // 转换 Question 到 QuestionResponse
@@ -332,13 +335,15 @@ func (s *Service) SearchQuestions(keyword string, current, pageSize int64) (*res
 	queryJSON, _ := json.Marshal(query)
 
 	// 2. 调 ES 搜索
-	result, err := s.es.Search("questions", queryJSON)
+	resultAny, err := s.esBreaker.Execute(func() (any, error) {
+		return s.es.Search("questions", queryJSON)
+	})
 	if err != nil {
 		// ES 挂了，降级到 MySQL LIKE
-		log.Printf("[ES] 搜索失败，降级到 MySQL: %v", err)
+		log.Printf("[ES] 搜索失败或熔断打开，降级到 MySQL: %v", err)
 		return s.searchFromMySQL(keyword, current, pageSize)
 	}
-
+	result := resultAny.(*es.SearchResult)
 	// 3. 解析 ES 命中的文档
 	records := make([]QuestionResponse, 0, len(result.Hits))
 	for _, hit := range result.Hits {

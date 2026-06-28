@@ -8,18 +8,21 @@ import (
 	"mianshiya-go-backend/internal/response"
 	"mianshiya-go-backend/internal/user"
 	"strconv"
+
+	"github.com/sony/gobreaker"
 )
 
 // Service 帖子服务层
 type Service struct {
-	repo    *Repository
-	userSvc *user.Service
-	es      *es.Client
+	repo      *Repository
+	userSvc   *user.Service
+	es        *es.Client
+	esBreaker *gobreaker.CircuitBreaker
 }
 
 // NewService 创建帖子服务实例
-func NewService(r *Repository, userSvc *user.Service, esClient *es.Client) *Service {
-	return &Service{repo: r, userSvc: userSvc, es: esClient}
+func NewService(r *Repository, userSvc *user.Service, esClient *es.Client, esBreaker *gobreaker.CircuitBreaker) *Service {
+	return &Service{repo: r, userSvc: userSvc, es: esClient, esBreaker: esBreaker}
 }
 
 // 转换 Post 到 PostResponse
@@ -392,13 +395,15 @@ func (s *Service) SearchPosts(keyword string, current, pageSize int64) (*respons
 		return nil, errors.New("构造 Elasticsearch 查询失败")
 	}
 	// 先尝试从 Elasticsearch 搜索
-	esResults, err := s.es.Search("posts", queryBytes)
+	resultAny, err := s.esBreaker.Execute(func() (any, error) {
+		return s.es.Search("posts", queryBytes)
+	})
 	if err != nil {
-		log.Printf("Elasticsearch 搜索失败: %v", err)
+		log.Printf("Elasticsearch 搜索失败或熔断打开: %v", err)
 		// 如果 Elasticsearch 搜索失败，降级到 MySQL 搜索
 		return s.searchFromMySQL(keyword, current, pageSize)
 	}
-
+	esResults := resultAny.(*es.SearchResult)
 	// 3. 解析 ES 搜索结果
 	records := make([]PostResponse, 0, len(esResults.Hits))
 	for _, hit := range esResults.Hits {
