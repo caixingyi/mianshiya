@@ -6,7 +6,6 @@ import React from "react";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import GlobalFooter from "@/components/GlobalFooter";
 import { menus } from "../../../config/menu";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/stores";
@@ -138,9 +137,7 @@ export default function BasicLayout({ children }: Props) {
           );
         }}
         // 渲染底部栏
-        footerRender={() => {
-          return <GlobalFooter />;
-        }}
+        footerRender={() => null}
         onMenuHeaderClick={(e) => console.log(e)}
         // 定义有哪些菜单
         menuDataRender={() => {

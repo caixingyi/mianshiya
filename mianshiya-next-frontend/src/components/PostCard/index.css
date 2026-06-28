@@ -1,0 +1,91 @@
+.post-card {
+    margin-bottom: 0;
+}
+
+.post-card .ant-card {
+    border-radius: 10px;
+    border: 1px solid #eee;
+}
+
+.post-card .ant-card-body {
+    padding: 24px;
+}
+
+.post-card-header {
+    margin-bottom: 10px;
+}
+
+.post-title-link {
+    font-size: 17px;
+    font-weight: 600;
+    color: #1a1a1a;
+    line-height: 1.5;
+    text-decoration: none;
+}
+
+.post-title-link:hover {
+    color: #1677ff;
+}
+
+.post-card-body {
+    color: #666;
+    font-size: 14px;
+    line-height: 1.8;
+    margin-bottom: 16px;
+    word-break: break-word;
+}
+
+.post-card-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px;
+    padding-top: 14px;
+    border-top: 1px solid #f5f5f5;
+}
+
+.post-card-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #999;
+    font-size: 12px;
+}
+
+.post-author {
+    font-weight: 500;
+    color: #555;
+}
+
+.post-time {
+    color: #bbb;
+    font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+    margin-left: 4px;
+}
+
+.post-actions {
+    margin-left: auto;
+    display: flex;
+    gap: 20px;
+}
+
+.action-btn {
+    cursor: pointer;
+    color: #8c8c8c;
+    font-size: 13px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.2s;
+    user-select: none;
+}
+
+.action-btn:hover {
+    color: #1677ff;
+}
+
+.action-btn.active {
+    color: #1677ff;
+}

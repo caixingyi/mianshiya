@@ -1,0 +1,25 @@
+#postsPage {
+    width: 100%;
+    padding: 8px 0 24px;
+}
+
+.posts-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding: 0 4px;
+}
+
+.post-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.empty-tip {
+    text-align: center;
+    color: #bbb;
+    padding: 80px 0;
+    font-size: 15px;
+}

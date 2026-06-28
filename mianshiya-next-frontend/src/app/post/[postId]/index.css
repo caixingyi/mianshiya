@@ -1,0 +1,56 @@
+#postPage {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 32px 16px;
+}
+
+#postPage .ant-card {
+    border-radius: 8px;
+}
+
+.post-title {
+    font-size: 26px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    line-height: 1.4;
+}
+
+.post-meta {
+    color: #999;
+    font-size: 13px;
+    margin-bottom: 16px;
+}
+
+.post-actions {
+    display: flex;
+    gap: 28px;
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid #f0f0f0;
+}
+
+.action-btn {
+    cursor: pointer;
+    color: #8c8c8c;
+    font-size: 15px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 1px solid #e8e8e8;
+    transition: all 0.2s;
+    user-select: none;
+}
+
+.action-btn:hover {
+    color: #1677ff;
+    border-color: #1677ff;
+    background: #f0f5ff;
+}
+
+.action-btn.active {
+    color: #1677ff;
+    border-color: #1677ff;
+    background: #e6f4ff;
+}
