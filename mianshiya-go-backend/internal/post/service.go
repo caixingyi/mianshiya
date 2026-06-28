@@ -367,9 +367,6 @@ func (s *Service) searchFromMySQL(keyword string, current, pageSize int64) (*res
 
 func (s *Service) SearchPosts(keyword string, current, pageSize int64) (*response.PageResponse[PostResponse], error) {
 	// 1. 校验参数
-	if keyword == "" {
-		return nil, errors.New("搜索关键词不能为空")
-	}
 	if current <= 0 {
 		current = 1
 	}
@@ -379,6 +376,15 @@ func (s *Service) SearchPosts(keyword string, current, pageSize int64) (*respons
 	if pageSize > 200 {
 		return nil, errors.New("参数错误")
 	}
+
+	// 空关键词不查 ES，直接走普通列表
+	if keyword == "" {
+		return s.ListPosts(&ListPostsRequest{
+			Current:  current,
+			PageSize: pageSize,
+		}, 0)
+	}
+
 	// 2. 构造 ES 查询 DSL（JSON）
 	query := map[string]interface{}{
 		"query": map[string]interface{}{

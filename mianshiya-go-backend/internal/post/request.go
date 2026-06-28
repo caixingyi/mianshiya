@@ -49,7 +49,7 @@ type GetPostRequest struct {
 
 // SearchPostsRequest 搜索帖子的请求参数
 type SearchPostsRequest struct {
-	Keyword  string `json:"keyword" binding:"required"`
-	Current  int64  `json:"current" binding:"required"`
-	PageSize int64  `json:"pageSize" binding:"required"`
+	Keyword  string `json:"keyword"`
+	Current  int64  `json:"current"`
+	PageSize int64  `json:"pageSize"`
 }

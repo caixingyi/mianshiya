@@ -117,7 +117,9 @@ func RegisterRouter(r *gin.Engine, database *gorm.DB, rdb *redis.Client, tokenSt
 	authAPI.POST("/post/edit", postHandler.EditPostHandler)
 	authAPI.POST("/post/my/list/page/vo", postHandler.ListMyPostsVOHandler)
 	authAPI.POST("/postThumb/do", postThumbHandler.DoPostThumbHandler)
+	authAPI.POST("/post_thumb/", postThumbHandler.DoPostThumbHandler) // 兼容 Java 路径
 	authAPI.POST("/postFavour/do", postFavourHandler.DoPostFavourHandler)
+	authAPI.POST("/post_favour/", postFavourHandler.DoPostFavourHandler) // 兼容 Java 路径
 	authAPI.POST("/postFavour/my/list/page", postFavourHandler.ListMyFavourPostHandler)
 
 	authAPI.POST("/file/upload", fileHandler.UploadFileHandler)

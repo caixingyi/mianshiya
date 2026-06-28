@@ -320,6 +320,14 @@ func (s *Service) SearchQuestions(keyword string, current, pageSize int64) (*res
 		return nil, errors.New("参数错误")
 	}
 
+	// 空关键词不查 ES，直接走普通列表
+	if keyword == "" {
+		return s.ListQuestions(&ListQuestionRequest{
+			Current:  current,
+			PageSize: pageSize,
+		})
+	}
+
 	// 1. 构造 ES 查询 DSL（JSON）
 	// multi_match 在 title 和 content 两个字段里搜 keyword
 	query := map[string]any{

@@ -49,7 +49,7 @@ type BatchDeleteQuestionRequest struct {
 
 // SearchQuestionRequest 搜索题目请求
 type SearchQuestionRequest struct {
-	SearchText string `json:"searchText" binding:"required"`
+	SearchText string `json:"searchText"`
 	Current    int64  `json:"current"`
 	PageSize   int64  `json:"pageSize"`
 }
