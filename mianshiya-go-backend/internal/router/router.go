@@ -9,6 +9,7 @@ import (
 
 	"mianshiya-go-backend/internal/ai"
 	"mianshiya-go-backend/internal/auth"
+	"mianshiya-go-backend/internal/cache"
 	"mianshiya-go-backend/internal/circuitbreaker"
 	"mianshiya-go-backend/internal/es"
 	"mianshiya-go-backend/internal/file"
@@ -33,6 +34,9 @@ func RegisterRouter(r *gin.Engine, database *gorm.DB, rdb *redis.Client, tokenSt
 	api.GET("/error-demo", handler.ErrorDemoHandler)
 	questionESBreaker := circuitbreaker.NewESBreaker("question-es-search")
 	postESBreaker := circuitbreaker.NewESBreaker("post-es-search")
+	// 初始化缓存组件
+	localCache := cache.NewLocalCache()
+	hotKeyDetector := cache.NewHotKeyDetector(rdb, 100, 60*time.Second, localCache)
 
 	userRepo := user.NewRepository(database)
 	userService := user.NewService(userRepo, rdb)
@@ -43,7 +47,7 @@ func RegisterRouter(r *gin.Engine, database *gorm.DB, rdb *redis.Client, tokenSt
 	questionHandler := question.NewHandler(questionService)
 
 	questionBankRepo := questionbank.NewRepository(database)
-	questionBankService := questionbank.NewService(questionBankRepo, questionService)
+	questionBankService := questionbank.NewService(questionBankRepo, questionService, rdb, localCache, hotKeyDetector)
 	questionBankHandler := questionbank.NewHandler(questionBankService)
 
 	questionBankQuestionRepo := questionbankquestion.NewRepository(database)

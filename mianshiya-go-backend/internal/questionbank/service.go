@@ -1,20 +1,31 @@
 package questionbank
 
 import (
+	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"mianshiya-go-backend/internal/cache"
 	"mianshiya-go-backend/internal/question"
 	"mianshiya-go-backend/internal/response"
+	"time"
+
+	"github.com/redis/go-redis/v9"
 )
 
 // Service 定义了题库服务的结构体
 type Service struct {
-	repo        *Repository
-	questionSvc *question.Service
+	repo           *Repository
+	questionSvc    *question.Service
+	rdb            *redis.Client         // Redis 客户端
+	localCache     *cache.LocalCache     // 本地缓存（L1）
+	hotKeyDetector *cache.HotKeyDetector // 热点检测器
+
 }
 
 // NewService 创建一个新的 Service 实例
-func NewService(repo *Repository, questionSvc *question.Service) *Service {
-	return &Service{repo: repo, questionSvc: questionSvc}
+func NewService(repo *Repository, questionSvc *question.Service, rdb *redis.Client, localCache *cache.LocalCache, hotKeyDetector *cache.HotKeyDetector) *Service {
+	return &Service{repo: repo, questionSvc: questionSvc, rdb: rdb, localCache: localCache, hotKeyDetector: hotKeyDetector}
 }
 
 func (s *Service) toQuestionBankResponse(qb *QuestionBank) *QuestionBankResponse {
@@ -58,7 +69,27 @@ func (s *Service) GetQuestionBankResponseByID(req *GetQuestionBankRequest) (*Que
 	if req.ID <= 0 {
 		return nil, errors.New("题库ID无效")
 	}
-	// 2. 调用 Repository 获取题库详情
+	cacheKey := fmt.Sprintf("bank:detail:%d", req.ID)
+	ctx := context.Background()
+
+	// L1: 本地缓存
+	if cached, ok := s.localCache.Get(cacheKey); ok {
+		return cached.(*QuestionBankResponse), nil
+	}
+	// L2: Redis 缓存
+	cachedJSON, err := s.rdb.Get(ctx, cacheKey).Result()
+	if err == nil {
+		var resp QuestionBankResponse
+		if err := json.Unmarshal([]byte(cachedJSON), &resp); err == nil {
+			// 回填 L1
+			s.localCache.Set(cacheKey, &resp, 5*time.Minute)
+			return &resp, nil
+		}
+	}
+	// 记录访问次数
+	_, isHot := s.hotKeyDetector.Record(ctx, cacheKey)
+
+	// L3: MySQL
 	questionBank, err := s.repo.FindByID(req.ID)
 	if err != nil {
 		return nil, err
@@ -85,6 +116,13 @@ func (s *Service) GetQuestionBankResponseByID(req *GetQuestionBankRequest) (*Que
 		}
 		resp.QuestionPage = questionPage
 	}
+	// 热点缓存
+	if isHot {
+		data, _ := json.Marshal(resp)
+		s.rdb.Set(ctx, cacheKey, data, 10*time.Minute)
+		s.localCache.Set(cacheKey, resp, 10*time.Minute)
+	}
+
 	return resp, nil
 }
 
@@ -139,7 +177,16 @@ func (s *Service) DeleteQuestionBank(id int64) error {
 		return errors.New("参数错误")
 	}
 	// 2. 调用 Repository 删除题库
-	return s.repo.Delete(id)
+	if err := s.repo.Delete(id); err != nil {
+		return err
+	}
+	// 清除缓存
+	cacheKey := fmt.Sprintf("bank:detail:%d", id)
+	ctx := context.Background()
+	s.localCache.Delete(cacheKey)
+	s.rdb.Del(ctx, cacheKey)
+
+	return nil
 }
 
 // UpdateQuestionBank 更新题库
@@ -164,7 +211,17 @@ func (s *Service) UpdateQuestionBank(req *UpdateQuestionBankRequest) error {
 		return errors.New("没有要更新的字段")
 	}
 
-	return s.repo.UpdateByID(req.ID, updates)
+	if err := s.repo.UpdateByID(req.ID, updates); err != nil {
+		return err
+	}
+
+	// 清除缓存
+	cacheKey := fmt.Sprintf("bank:detail:%d", req.ID)
+	ctx := context.Background()
+	s.localCache.Delete(cacheKey)
+	s.rdb.Del(ctx, cacheKey)
+
+	return nil
 }
 
 // EditQuestionBank 编辑题库（用户接口）
