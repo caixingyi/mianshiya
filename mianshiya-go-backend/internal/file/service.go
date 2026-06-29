@@ -13,7 +13,7 @@ import (
 const (
 	BizUserAvatar = "user_avatar"
 
-	maxAvatarSize = 1 * 1024 * 1024
+	maxAvatarSize = 5 * 1024 * 1024 // 5MB
 )
 
 var allowedAvatarExts = map[string]bool{
