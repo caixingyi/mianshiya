@@ -64,6 +64,8 @@ func Load() (*Config, error) {
 	// 查找配置文件的位置
 	v.AddConfigPath(".")
 	v.AddConfigPath("./config")
+	v.AddConfigPath("..")     // 从 cmd/server/ 运行时能找到项目根目录
+	v.AddConfigPath("../..")  // 从 cmd/server/ 子目录更深时
 
 	// 读取配置文件
 	if err := v.ReadInConfig(); err != nil {
