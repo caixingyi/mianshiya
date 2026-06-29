@@ -1,11 +1,13 @@
 import axios from "axios";
 
 // 创建 Axios 实例
-// 区分开发和生产环境
-const DEV_BASE_URL = "http://localhost:8101";
-const PROD_BASE_URL = "http://xx.xx.xx.xx";
+// Server 端(SSR) 用 NEXT_PUBLIC_API_URL，Docker 中指向 backend 容器
+// Client 端(浏览器) 用空 baseURL，通过 Nginx 代理到同源
+const BASE_URL = typeof window === "undefined"
+  ? (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8101")
+  : "";
 const myAxios = axios.create({
-  baseURL: DEV_BASE_URL,
+  baseURL: BASE_URL,
   timeout: 60000,
   withCredentials: true,
 });

@@ -19,7 +19,7 @@ const QuestionBankList = (props: Props) => {
               <Avatar
                 shape="square"
                 size={48}
-                src={questionBank.picture}
+                src={questionBank.picture || undefined}
                 style={{
                   background: "linear-gradient(135deg, #1677ff 0%, #69b1ff 100%)",
                 }}

@@ -1,20 +1,25 @@
-"use server";
-import { listQuestionBankVoByPageUsingPost } from "@/api/questionBankController";
 import QuestionBankList from "@/components/QuestionBankList";
 import PageContainer from "@/components/PageContainer";
 import SectionHeader from "@/components/SectionHeader";
 import "./index.css";
 
 export default async function BanksPage() {
-  let questionBankList = [];
-  const pageSize = 100;
+  let questionBankList: any[] = [];
+  const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8101";
+
   try {
-    const res = await listQuestionBankVoByPageUsingPost({
-      pageSize,
-      sortField: "createTime",
-      sortOrder: "descend",
+    const res = await fetch(`${apiBase}/api/questionBank/list/page/vo`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        pageSize: 100,
+        sortField: "createTime",
+        sortOrder: "descend",
+      }),
+      cache: "no-store",
     });
-    questionBankList = res.data.records ?? [];
+    const json = await res.json();
+    questionBankList = json.data?.records ?? [];
   } catch (e) {
     console.error("获取题库列表失败", e);
   }
