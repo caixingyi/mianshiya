@@ -3,6 +3,7 @@ import { AntdRegistry } from "@ant-design/nextjs-registry";
 import BasicLayout from "@/layouts/BasicLayout";
 import React, { useCallback, useEffect } from "react";
 import { Provider, useDispatch } from "react-redux";
+import { ConfigProvider } from "antd";
 import store, { AppDispatch } from "@/stores";
 import { getLoginUserUsingGet } from "@/api/userController";
 import AccessLayout from "@/access/AccessLayout";
@@ -57,13 +58,34 @@ export default function RootLayout({
     <html lang="zh">
       <body>
         <AntdRegistry>
-          <Provider store={store}>
-            <InitLayout>
-              <BasicLayout>
-                <AccessLayout>{children}</AccessLayout>
-              </BasicLayout>
-            </InitLayout>
-          </Provider>
+          <ConfigProvider
+            theme={{
+              token: {
+                colorPrimary: "#2563eb",
+                borderRadius: 10,
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+              },
+              components: {
+                Card: {
+                  borderRadiusLG: 14,
+                },
+                Button: {
+                  borderRadius: 8,
+                },
+                Input: {
+                  borderRadius: 8,
+                },
+              },
+            }}
+          >
+            <Provider store={store}>
+              <InitLayout>
+                <BasicLayout>
+                  <AccessLayout>{children}</AccessLayout>
+                </BasicLayout>
+              </InitLayout>
+            </Provider>
+          </ConfigProvider>
         </AntdRegistry>
       </body>
     </html>

@@ -1,0 +1,30 @@
+.section-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.section-header-title {
+  margin-bottom: 6px !important;
+  font-size: 24px !important;
+  letter-spacing: -0.3px;
+}
+
+.section-header-desc {
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.section-header-extra {
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .section-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
