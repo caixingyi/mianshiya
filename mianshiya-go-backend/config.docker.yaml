@@ -1,0 +1,21 @@
+database:
+  db_user: root
+  db_password: "12345678"
+  db_host: mysql
+  db_port: 3306
+  db_name: mianshiya
+
+redis:
+  host: redis
+  port: 6379
+  password: ""
+  db: 0
+
+ai:
+  api_key: "ark-7a54e8b4-aeac-4aa4-9df3-8532b683b968-fa9cf"
+  base_url: "https://ark.cn-beijing.volces.com/api/v3"
+  model: "deepseek-v4-flash-260425"
+
+es:
+  addresses:
+    - "http://elasticsearch:9200"
