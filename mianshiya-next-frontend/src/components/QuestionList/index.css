@@ -1,3 +1,28 @@
 .question-list {
+    border-radius: var(--radius-card);
+    border-color: var(--border-light);
+}
 
+.question-list .ant-list-item {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border-light);
+    transition: background 0.2s;
+}
+
+.question-list .ant-list-item:last-child {
+    border-bottom: none;
+}
+
+.question-list .ant-list-item:hover {
+    background: var(--brand-primary-light);
+}
+
+.question-list .ant-list-item-meta-title a {
+    font-size: 14px;
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.question-list .ant-list-item-meta-title a:hover {
+    color: var(--brand-primary);
 }

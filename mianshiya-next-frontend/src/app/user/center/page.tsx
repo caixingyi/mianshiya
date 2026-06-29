@@ -1,29 +1,26 @@
 "use client";
-import {Avatar, Card, Col, Row, Segmented, Tag} from "antd";
-import {useSelector} from "react-redux";
-import {RootState} from "@/stores";
+import { Avatar, Card, Col, Row, Segmented, Tag, message } from "antd";
+import { useSelector, useDispatch } from "react-redux";
+import { RootState, AppDispatch } from "@/stores";
+import { setLoginUser } from "@/stores/loginUser";
 import Title from "antd/es/typography/Title";
 import Paragraph from "antd/es/typography/Paragraph";
-import {useState} from "react";
+import { useState } from "react";
+import { CameraOutlined } from "@ant-design/icons";
 import CalendarChart from "@/app/user/center/components/CalendarChart";
 import "./index.css";
 import UserInfo from "@/app/user/center/components/UserInfo";
 import UserInfoEditForm from "@/app/user/center/components/UserInfoEditForm";
-import {USER_ROLE_ENUM, USER_ROLE_TEXT_MAP} from "@/constants/user";
+import { USER_ROLE_ENUM, USER_ROLE_TEXT_MAP } from "@/constants/user";
+import { uploadFileUsingPost } from "@/api/fileController";
+import { updateMyUserUsingPost } from "@/api/userController";
 import dayjs from "dayjs";
 
-/**
- * 用户中心页面
- * @constructor
- */
 export default function UserCenterPage() {
-  // 获取登录用户信息
   const loginUser = useSelector((state: RootState) => state.loginUser);
-  // 便于复用，新起一个变量
+  const dispatch = useDispatch<AppDispatch>();
   const user = loginUser;
-  // 控制菜单栏的 Tab 高亮
   const [activeTabKey, setActiveTabKey] = useState<string>("info");
-  // 控制用户资料编辑状态的切换
   const [currentEditState, setCurrentEditState] = useState<string>("查看信息");
 
   return (
@@ -31,7 +28,44 @@ export default function UserCenterPage() {
       <Row gutter={[16, 16]}>
         <Col xs={24} md={6}>
           <Card style={{ textAlign: "center" }}>
-            <Avatar src={user.userAvatar} size={72} />
+            <input
+              type="file"
+              accept="image/*"
+              style={{ display: "none" }}
+              id="avatar-upload-input"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                try {
+                  const res = await uploadFileUsingPost({}, { biz: "user_avatar" }, file);
+                  const url = (res as any).data || "";
+                  if (url) {
+                    await updateMyUserUsingPost({ userAvatar: url } as any);
+                    dispatch(setLoginUser({ ...user, userAvatar: url } as any));
+                    message.success("头像更新成功");
+                  }
+                } catch (err: any) {
+                  console.error("上传失败:", err);
+                  message.error("上传失败: " + (err?.message || err?.toString() || "未知错误"));
+                }
+                e.target.value = "";
+              }}
+            />
+            <label htmlFor="avatar-upload-input" style={{ cursor: "pointer", display: "inline-block" }}>
+              <div style={{ position: "relative", display: "inline-block" }}>
+                <Avatar src={user.userAvatar} size={72} />
+                <div
+                  style={{
+                    position: "absolute", bottom: 0, right: 0,
+                    background: "rgba(0,0,0,0.45)", borderRadius: "50%",
+                    width: 24, height: 24, display: "flex",
+                    alignItems: "center", justifyContent: "center",
+                  }}
+                >
+                  <CameraOutlined style={{ color: "#fff", fontSize: 12 }} />
+                </div>
+              </div>
+            </label>
             <div style={{ marginBottom: 16 }} />
             <Card.Meta
               title={
@@ -61,23 +95,12 @@ export default function UserCenterPage() {
         <Col xs={24} md={18}>
           <Card
             tabList={[
-              {
-                key: "info",
-                label: "我的信息",
-              },
-              {
-                key: "record",
-                label: "刷题记录",
-              },
-              {
-                key: "others",
-                label: "其他",
-              },
+              { key: "info", label: "我的信息" },
+              { key: "record", label: "刷题记录" },
+              { key: "others", label: "其他" },
             ]}
             activeTabKey={activeTabKey}
-            onTabChange={(key: string) => {
-              setActiveTabKey(key);
-            }}
+            onTabChange={(key: string) => { setActiveTabKey(key); }}
           >
             {activeTabKey === "info" && (
               <>
@@ -87,16 +110,10 @@ export default function UserCenterPage() {
                   onChange={setCurrentEditState}
                 />
                 {currentEditState === "查看信息" && <UserInfo user={user} />}
-                {currentEditState === "修改信息" && (
-                  <UserInfoEditForm user={user} />
-                )}
+                {currentEditState === "修改信息" && <UserInfoEditForm user={user} />}
               </>
             )}
-            {activeTabKey === "record" && (
-              <>
-                <CalendarChart />
-              </>
-            )}
+            {activeTabKey === "record" && <><CalendarChart /></>}
             {activeTabKey === "others" && <>bbb</>}
           </Card>
         </Col>

@@ -1,16 +1,12 @@
 "use server";
-import Title from "antd/es/typography/Title";
 import { listQuestionBankVoByPageUsingPost } from "@/api/questionBankController";
 import QuestionBankList from "@/components/QuestionBankList";
+import PageContainer from "@/components/PageContainer";
+import SectionHeader from "@/components/SectionHeader";
 import "./index.css";
 
-/**
- * 题库列表页面
- * @constructor
- */
 export default async function BanksPage() {
   let questionBankList = [];
-  // 题库数量不多，直接全量获取
   const pageSize = 100;
   try {
     const res = await listQuestionBankVoByPageUsingPost({
@@ -24,9 +20,14 @@ export default async function BanksPage() {
   }
 
   return (
-    <div id="banksPage" className="max-width-content">
-      <Title level={3}>题库大全</Title>
-      <QuestionBankList questionBankList={questionBankList} />
-    </div>
+    <PageContainer>
+      <div id="banksPage">
+        <SectionHeader
+          title="题库大全"
+          description="系统化题库集合，帮助你按方向规划学习路线。"
+        />
+        <QuestionBankList questionBankList={questionBankList} />
+      </div>
+    </PageContainer>
   );
 }

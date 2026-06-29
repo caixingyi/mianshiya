@@ -141,3 +141,6 @@ mianshiya-next-backend/
 **/.cache/
 **/docs
 *.bak
+mianshiya-go-backend/uploads
+.next
+AGENTS.md

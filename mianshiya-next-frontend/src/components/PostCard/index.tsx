@@ -60,43 +60,51 @@ const PostCard = (props: Props) => {
   return (
     <div className="post-card">
       <Card hoverable>
-        <div className="post-card-header">
-          <Link href={`/post/${post.id}`} className="post-title-link">
-            {post.title}
-          </Link>
-        </div>
-        <div className="post-card-body">
-          {(post.content ?? "").slice(0, 200)}
-          {(post.content?.length ?? 0) > 200 ? " ..." : ""}
-        </div>
-        <div className="post-card-footer">
-          <div className="post-card-meta">
+        <div className="post-card-wrapper">
+          <div className="post-card-avatar">
             <Avatar
-              size={24}
+              size={36}
               src={avatarUrl}
               icon={!avatarUrl ? <UserOutlined /> : undefined}
-              style={{ flexShrink: 0 }}
-            />
-            <span className="post-author">{userName}</span>
-            <span className="post-time">
-              <ClockCircleOutlined style={{ marginRight: 2 }} />
-              {post.createTime?.slice(0, 10)}
-            </span>
+            >
+              {userName[0]}
+            </Avatar>
           </div>
-          <TagList tagList={post.tagList} />
-          <div className="post-actions">
-            <span
-              className={`action-btn${hasThumb ? " active" : ""}`}
-              onClick={handleThumb}
-            >
-              {hasThumb ? <LikeFilled /> : <LikeOutlined />} {thumbNum}
-            </span>
-            <span
-              className={`action-btn${hasFavour ? " active" : ""}`}
-              onClick={handleFavour}
-            >
-              {hasFavour ? <StarFilled /> : <StarOutlined />} {favourNum}
-            </span>
+          <div className="post-card-content">
+            <div className="post-card-header">
+              <Link href={`/post/${post.id}`} className="post-title-link">
+                {post.title}
+              </Link>
+            </div>
+            <div className="post-card-body">
+              {(post.content ?? "").slice(0, 200)}
+              {(post.content?.length ?? 0) > 200 ? " ..." : ""}
+            </div>
+            <div className="post-card-footer">
+              <div className="post-card-meta">
+                <span className="post-author">{userName}</span>
+                <span className="post-time">
+                  <ClockCircleOutlined style={{ marginRight: 2 }} />
+                  {post.createTime?.slice(0, 10)}
+                </span>
+              </div>
+              <div style={{ flex: 1 }} />
+              <TagList tagList={post.tagList} />
+              <div className="post-actions" onClick={(e) => e.stopPropagation()}>
+                <span
+                  className={`action-btn${hasThumb ? " active" : ""}`}
+                  onClick={handleThumb}
+                >
+                  {hasThumb ? <LikeFilled /> : <LikeOutlined />} {thumbNum}
+                </span>
+                <span
+                  className={`action-btn${hasFavour ? " active" : ""}`}
+                  onClick={handleFavour}
+                >
+                  {hasFavour ? <StarFilled /> : <StarOutlined />} {favourNum}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </Card>

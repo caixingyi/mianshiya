@@ -1,91 +1,99 @@
-.post-card {
-    margin-bottom: 0;
-}
-
 .post-card .ant-card {
-    border-radius: 10px;
-    border: 1px solid #eee;
+  border-radius: var(--radius-card);
+  border-color: var(--border-light);
 }
 
 .post-card .ant-card-body {
-    padding: 24px;
+  padding: 20px 24px;
+}
+
+.post-card-wrapper {
+  display: flex;
+  gap: 16px;
+}
+
+.post-card-avatar {
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+
+.post-card-content {
+  flex: 1;
+  min-width: 0;
 }
 
 .post-card-header {
-    margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .post-title-link {
-    font-size: 17px;
-    font-weight: 600;
-    color: #1a1a1a;
-    line-height: 1.5;
-    text-decoration: none;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.5;
 }
 
 .post-title-link:hover {
-    color: #1677ff;
+  color: var(--brand-primary);
 }
 
 .post-card-body {
-    color: #666;
-    font-size: 14px;
-    line-height: 1.8;
-    margin-bottom: 16px;
-    word-break: break-word;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.8;
+  margin-bottom: 14px;
+  word-break: break-word;
 }
 
 .post-card-footer {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 16px;
-    padding-top: 14px;
-    border-top: 1px solid #f5f5f5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-light);
 }
 
 .post-card-meta {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: #999;
-    font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-tertiary);
+  font-size: 12px;
 }
 
 .post-author {
-    font-weight: 500;
-    color: #555;
+  font-weight: 600;
+  color: var(--text-secondary);
 }
 
 .post-time {
-    color: #bbb;
-    font-size: 12px;
-    display: inline-flex;
-    align-items: center;
-    margin-left: 4px;
+  color: var(--text-tertiary);
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
 }
 
 .post-actions {
-    margin-left: auto;
-    display: flex;
-    gap: 20px;
+  display: flex;
+  gap: 18px;
 }
 
 .action-btn {
-    cursor: pointer;
-    color: #8c8c8c;
-    font-size: 13px;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    transition: all 0.2s;
-    user-select: none;
+  cursor: pointer;
+  color: var(--text-tertiary);
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: color 0.2s;
+  user-select: none;
 }
 
 .action-btn:hover {
-    color: #1677ff;
+  color: var(--brand-primary);
 }
 
 .action-btn.active {
-    color: #1677ff;
+  color: var(--brand-primary);
 }

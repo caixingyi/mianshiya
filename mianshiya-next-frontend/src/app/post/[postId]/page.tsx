@@ -12,6 +12,7 @@ import {
 import TagList from "@/components/TagList";
 import MdViewer from "@/components/MdViewer";
 import { useEffect, useState } from "react";
+import PageContainer from "@/components/PageContainer";
 import "./index.css";
 
 interface Props {
@@ -65,6 +66,7 @@ export default function PostPage({ params }: Props) {
   if (!post) return <div>获取帖子详情失败，请刷新重试</div>;
 
   return (
+    <PageContainer narrow>
     <div id="postPage">
       <Card>
         <h1 className="post-title">{post.title}</h1>
@@ -84,5 +86,6 @@ export default function PostPage({ params }: Props) {
         </div>
       </Card>
     </div>
+    </PageContainer>
   );
 }
